@@ -1,0 +1,5 @@
+:root { --bg:#000; --fg:#ccc; --dim:#606060; }
+html, body { margin:0; height:100%; background:var(--bg); color:var(--fg);
+  font-family: "DejaVu Sans Mono", "Liberation Mono", monospace; font-size:13px; }
+#ctop-root { padding:8px; }
+#ctop-status { color:var(--dim); }

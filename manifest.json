@@ -1,0 +1,9 @@
+{
+  "name": "ctop",
+  "version": "0.1.0",
+  "requires": { "cockpit": "215" },
+  "tools": {
+    "index": { "label": "Cockpit Top", "path": "index.html", "order": 50 }
+  },
+  "content-security-policy": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'"
+}
