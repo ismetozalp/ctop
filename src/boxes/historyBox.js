@@ -16,7 +16,7 @@ import { BrailleGraph } from "../graph.js";
 import { theme } from "../theme.js";
 import { RingBuffer } from "../ringbuffer.js";
 
-const UNAVAILABLE_MSG = "Install cockpit-pcp for history (dnf install cockpit-pcp)";
+const UNAVAILABLE_MSG = "PCP archive history unavailable (needs an active pmlogger; PCP support is built into cockpit-bridge on RHEL 10 — no separate cockpit-pcp package)";
 const METRICS = [
   { name: "kernel.all.cpu.user", derive: "rate" },
   { name: "kernel.all.cpu.sys", derive: "rate" },
@@ -116,10 +116,11 @@ export class HistoryBox {
 
       const user = Number(merged[posUser]) || 0;
       const sys = Number(merged[posSys]) || 0;
-      // Exact units/normalization of kernel.all.cpu.{user,sys} rate over the
-      // archive are unverified here; clamp defensively into a 0-100% band
-      // rather than risk a nonsensical/huge value breaking the graph.
-      const pct = Math.max(0, Math.min(100, user + sys));
+      // kernel.all.cpu.{user,sys} are aggregate CPU-time counters in MILLISECONDS
+      // (verified against the live pcp-archive channel), so derive:"rate" yields
+      // ms/s summed across all cores. Busy% = (user+sys)/(1000*cores)*100.
+      const cores = (typeof navigator !== "undefined" && navigator.hardwareConcurrency) || 1;
+      const pct = Math.max(0, Math.min(100, (user + sys) / (1000 * cores) * 100));
       this._buf.push(pct);
     }
     if (this._buf.length) this.graph.render(this._buf.toArray());

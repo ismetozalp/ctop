@@ -9,7 +9,7 @@ const DEFAULTS = {
   netBits: false,      // false = bytes/s, true = bits/s
   notify: false,       // browser notifications on threshold breach
   thresholds: { cpu: 90, mem: 90, temp: 90 },
-  boxes: { gpu: true, mem: true, net: true, bat: true, proc: true, containers: true, sensors: true, history: false },
+  boxes: { gpu: true, mem: true, net: true, bat: true, proc: true, containers: true, sensors: true, history: true },
 };
 
 function load() {
