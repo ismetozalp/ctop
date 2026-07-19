@@ -54,3 +54,4 @@ html, body { margin:0; height:100%; background:var(--bg); color:var(--fg);
   #ctop-grid { grid-template-columns:1fr; grid-template-areas:"cpu" "left" "proc"; }
 }
 :root.pf-v6-theme-dark { --bg:#0f1319; }
+.cpu-model { margin-left:auto; color:#606060; }

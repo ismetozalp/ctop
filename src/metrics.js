@@ -27,13 +27,13 @@ const METRICS = [
 ];
 
 export class Metrics {
-  constructor({ interval = 2000, historyLen = 400 } = {}) {
+  constructor({ interval = 2000, historyLen = 600 } = {}) {
     this.interval = interval;
     this.historyLen = historyLen;
     this._dec = new Decompressor();
     this._meta = null;
     this._metaCbs = []; this._sampleCbs = [];
-    this.cpu = { total: new RingBuffer(historyLen), cores: [], temp: new RingBuffer(historyLen) };
+    this.cpu = { total: new RingBuffer(historyLen), cores: [], temp: new RingBuffer(historyLen), model: "" };
     this.mem = { used: 0, cached: 0, available: 0, free: 0, swapUsed: 0, swapTotal: 0, total: 0 };
     this.disks = {}; this.net = {}; this.mounts = {};
   }
@@ -48,16 +48,35 @@ export class Metrics {
     this.channel.addEventListener("close", (_ev, options) => {
       this._closed = options && options.problem ? options.problem : "closed";
     });
-    // Real, near-static totals from /proc/meminfo (channel has no swap-total / reliable mem-total)
-    window.cockpit.file("/proc/meminfo").read().then((c) => {
+    // CPU model name (btop shows it; the channel doesn't provide it). One-shot.
+    window.cockpit.file("/proc/cpuinfo").read().then((c) => {
       if (!c) return;
-      const mt = c.match(/MemTotal:\s+(\d+)/);
-      const st = c.match(/SwapTotal:\s+(\d+)/);
-      if (mt) this.mem.total = +mt[1] * 1024;
-      if (st) this.mem.swapTotal = +st[1] * 1024;
+      const m = c.match(/model name\s*:\s*(.+)/);
+      // Trim marketing noise like btop does: "Intel(R) Core(TM) i7-7700HQ CPU @
+      // 2.80GHz" -> "Intel Core i7-7700HQ".
+      if (m) this.cpu.model = m[1].replace(/\(R\)|\(TM\)|\(tm\)/g, "").replace(/\s+CPU\s+@.*/i, "").replace(/\s+/g, " ").trim();
     }).catch(() => {});
+    // /proc/meminfo has MemTotal, SwapTotal, and the kernel's MemAvailable —
+    // none reliably in the channel — so poll it on the sample cadence.
+    this._readMeminfo();
+    this._meminfoTimer = setInterval(() => this._readMeminfo(), this.interval);
   }
-  stop() { if (this.channel) this.channel.close(); }
+  _readMeminfo() {
+    if (this._meminfoInFlight) return;
+    this._meminfoInFlight = true;
+    window.cockpit.file("/proc/meminfo").read().then((c) => {
+      this._meminfoInFlight = false;
+      if (!c) return;
+      const g = (re) => { const m = c.match(re); return m ? +m[1] * 1024 : null; };
+      const total = g(/MemTotal:\s+(\d+)/);
+      const swapTotal = g(/SwapTotal:\s+(\d+)/);
+      const avail = g(/MemAvailable:\s+(\d+)/);
+      if (total !== null) this.mem.total = total;
+      if (swapTotal !== null) this.mem.swapTotal = swapTotal;
+      if (avail !== null) this.mem.available = avail;
+    }).catch(() => { this._meminfoInFlight = false; });
+  }
+  stop() { if (this.channel) this.channel.close(); if (this._meminfoTimer) clearInterval(this._meminfoTimer); }
 
   _onmessage(payload) {
     const data = JSON.parse(payload);
@@ -115,8 +134,7 @@ export class Metrics {
     this.mem.used = this._get(sample, "memory.used") || 0;
     this.mem.cached = this._get(sample, "memory.cached") || 0;
     this.mem.free = this._get(sample, "memory.free") || 0;
-    // memory.available isn't provided by the internal source; approximate.
-    this.mem.available = this.mem.free + this.mem.cached;
+    // this.mem.available comes from /proc/meminfo (MemAvailable) via _readMeminfo.
     this.mem.swapUsed = this._get(sample, "memory.swap-used") || 0;
     if (!this.mem.total) this.mem.total = this.mem.used + this.mem.available;
 

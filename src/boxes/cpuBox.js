@@ -15,6 +15,7 @@ export class CpuBox {
           <span class="cpu-freq"></span>
           <span class="cpu-load">load: -- -- --</span>
           <span class="cpu-temp"></span>
+          <span class="cpu-model"></span>
         </div>
         <canvas class="cpu-graph"></canvas>
         <div class="cpu-cores"></div>
@@ -27,6 +28,7 @@ export class CpuBox {
     this.loadEl = this.root.querySelector(".cpu-load");
     this.tempEl = this.root.querySelector(".cpu-temp");
     this.freqEl = this.root.querySelector(".cpu-freq");
+    this.modelEl = this.root.querySelector(".cpu-model");
     this.coresEl = this.root.querySelector(".cpu-cores");
     this._coreMeters = [];
     this._refreshSystem();
@@ -77,5 +79,6 @@ export class CpuBox {
       this._coreMeters[i].pct.textContent = v.toFixed(0);
     });
     if (m.cpu.temp.length) this.tempEl.textContent = m.cpu.temp.last().toFixed(0) + "°C";
+    if (m.cpu.model && this.modelEl.textContent !== m.cpu.model) this.modelEl.textContent = m.cpu.model;
   }
 }

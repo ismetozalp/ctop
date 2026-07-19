@@ -52,7 +52,10 @@ export class BrailleGraph {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, cssW, cssH);
 
-    const cols = Math.max(1, Math.floor(cssW / 2)); // 2px per braille column pair min
+    // ~8px per braille cell (≈ one monospace char, like btop). Each cell holds
+    // 2 samples, so a full box needs 2*cols samples of history — keep this coarse
+    // enough that the ring buffer (see Metrics.historyLen) can actually fill it.
+    const cols = Math.max(1, Math.floor(cssW / 8));
     const grid = quantize(data, cols, this.rows, { maxValue, offset, noZero });
     const cellW = cssW / cols;              // width of one 2-dot cell
     const cellH = cssH / this.rows;         // height of one 4-dot cell
