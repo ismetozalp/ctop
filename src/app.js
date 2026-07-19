@@ -63,7 +63,7 @@ const proc = new ProcBox(document.getElementById("slot-proc"), {
   cwdOf: (pid) => processes.cwdOf(pid),
 });
 proc.mount();
-function startProcesses() { processes.start((list) => { if (!settings.get("paused")) proc.update(list); }); }
+function startProcesses() { processes.start((list) => { if (!settings.get("paused")) { proc.update(list); sizeProcScroll(); } }); }
 startProcesses();
 
 // ---- metrics channel (reconnect + interval changes) ------------------------
@@ -95,11 +95,22 @@ function render() {
   checkThresholds(latest);
 }
 
+// Size the process table's scroll area to fill down to the viewport bottom, so
+// the proc box fits the window and its rows scroll inside the box (not the page).
+function sizeProcScroll() {
+  const sc = document.querySelector(".proc-scroll");
+  if (!sc) return;
+  const top = sc.getBoundingClientRect().top;
+  sc.style.maxHeight = Math.max(120, window.innerHeight - top - 12) + "px";
+  sc.style.overflowY = "auto";
+}
+
 let resizeTimer = null;
 window.addEventListener("resize", () => {
   if (resizeTimer) return;
-  resizeTimer = setTimeout(() => { resizeTimer = null; if (latest) render(); }, 100);
+  resizeTimer = setTimeout(() => { resizeTimer = null; sizeProcScroll(); if (latest) render(); }, 100);
 });
+setTimeout(sizeProcScroll, 300); // after first layout
 
 // ---- thresholds + notifications --------------------------------------------
 const alertState = {};
