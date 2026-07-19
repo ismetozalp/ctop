@@ -16,7 +16,7 @@ import { BrailleGraph } from "../graph.js";
 import { theme } from "../theme.js";
 import { RingBuffer } from "../ringbuffer.js";
 
-const UNAVAILABLE_MSG = "PCP archive history unavailable (needs an active pmlogger; PCP support is built into cockpit-bridge on RHEL 10 — no separate cockpit-pcp package)";
+const UNAVAILABLE_MSG = "PCP history unavailable — needs Cockpit's PCP support and a running pmlogger service (on some distros install the 'cockpit-pcp' package).";
 const METRICS = [
   { name: "kernel.all.cpu.user", derive: "rate" },
   { name: "kernel.all.cpu.sys", derive: "rate" },
