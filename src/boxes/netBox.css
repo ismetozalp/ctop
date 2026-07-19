@@ -1,0 +1,4 @@
+.net-box { --box:#5c588d; }
+.net-dir { display:flex; align-items:center; gap:8px; margin:3px 0; }
+.net-tag { width:16px; color:#606060; } .net-rx, .net-tx { flex:1; height:36px; }
+.net-rx-val, .net-tx-val { width:110px; text-align:right; color:#ccc; }
