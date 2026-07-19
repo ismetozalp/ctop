@@ -225,7 +225,7 @@ html, body { overflow-x: hidden; }
 #tb-boxes-menu { position:absolute; top:26px; left:0; z-index:20; background:#111; border:1px solid #444; border-radius:4px; padding:6px; display:flex; flex-direction:column; gap:2px; }
 #tb-boxes-menu.hidden { display:none; }
 #tb-boxes-menu label { display:flex; align-items:center; gap:6px; color:#ccc; cursor:pointer; }
-#ctop-grid > .alert { outline:2px solid #dc4c4c; outline-offset:-1px; border-radius:6px; animation:ctop-pulse 1s ease-in-out infinite; }
+#ctop-grid .alert { outline:2px solid #dc4c4c; outline-offset:-1px; border-radius:6px; animation:ctop-pulse 1s ease-in-out infinite; }
 @keyframes ctop-pulse { 0%,100%{ outline-color:#dc4c4c; } 50%{ outline-color:#7a2020; } }
 
 /* ---- history box ---- */
@@ -327,3 +327,4 @@ html, body { overflow-x: hidden; }
   text-overflow: ellipsis;
   font-family: monospace;
 }
+.ctop-hidden { display:none !important; }

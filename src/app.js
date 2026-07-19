@@ -78,6 +78,7 @@ function connect() {
   metrics.channel.addEventListener("close", (_e, opts) => {
     if (opts && opts.problem) {
       showBanner("Metrics channel lost (" + opts.problem + "). Reconnecting…");
+      metrics.stop(); // clears the orphaned /proc/meminfo poll timer before reconnecting
       setTimeout(connect, backoff);
       backoff = Math.min(backoff * 2, 30000);
     }
@@ -165,6 +166,7 @@ notifyChk.addEventListener("change", () => {
 const themeSel = document.getElementById("tb-theme");
 function applyTheme(name) {
   if (!name || name === "Default") { theme.applyDefault(); if (latest) render(); return; }
+  if (!window.cockpit) return;
   window.cockpit.file("/usr/share/btop/themes/" + name + ".theme").read()
     .then((txt) => { if (txt) theme.loadThemeText(txt); if (latest) render(); })
     .catch(() => {});
@@ -192,7 +194,9 @@ function applyBoxVisibility() {
   const b = settings.get("boxes");
   for (const [name, slot] of Object.entries(SLOTS)) {
     const el = document.getElementById(slot);
-    if (el) el.style.display = b[name] === false ? "none" : "";
+    // Toggle a class with `display:none !important` — self-polling boxes
+    // reassign their own root.style.display, which an !important class overrides.
+    if (el) el.classList.toggle("ctop-hidden", b[name] === false);
   }
 }
 const boxesBtn = document.getElementById("tb-boxes");
