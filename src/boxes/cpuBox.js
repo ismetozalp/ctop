@@ -12,6 +12,7 @@ export class CpuBox {
         <div class="cpu-header">
           <canvas class="cpu-total-meter"></canvas>
           <span class="cpu-total-pct">--%</span>
+          <span class="cpu-freq"></span>
           <span class="cpu-load">load: -- -- --</span>
           <span class="cpu-temp"></span>
         </div>
@@ -25,13 +26,27 @@ export class CpuBox {
     this.pctEl = this.root.querySelector(".cpu-total-pct");
     this.loadEl = this.root.querySelector(".cpu-load");
     this.tempEl = this.root.querySelector(".cpu-temp");
+    this.freqEl = this.root.querySelector(".cpu-freq");
     this.coresEl = this.root.querySelector(".cpu-cores");
     this._coreMeters = [];
-    // load average (best-effort)
-    if (window.cockpit) {
-      window.cockpit.file("/proc/loadavg").read().then((c) => {
-        if (c) { const p = c.split(" "); this.loadEl.textContent = `load: ${p[0]} ${p[1]} ${p[2]}`; }
-      }).catch(() => {});
+    this._refreshSystem();
+  }
+  // Load average + CPU frequency aren't in the metrics1 channel; read them from
+  // /proc and /sys on the sample cadence (update() calls this ~once per 2s).
+  // In-flight guards prevent overlapping reads if a read is slow.
+  _refreshSystem() {
+    if (!window.cockpit) return;
+    if (!this._loadInFlight) {
+      this._loadInFlight = true;
+      window.cockpit.file("/proc/loadavg").read()
+        .then((c) => { this._loadInFlight = false; if (c) { const p = c.split(" "); this.loadEl.textContent = `load: ${p[0]} ${p[1]} ${p[2]}`; } })
+        .catch(() => { this._loadInFlight = false; });
+    }
+    if (!this._freqInFlight) {
+      this._freqInFlight = true;
+      window.cockpit.file("/sys/devices/system/cpu/cpufreq/policy0/scaling_cur_freq").read()
+        .then((c) => { this._freqInFlight = false; const khz = parseInt(c, 10); if (khz > 0) this.freqEl.textContent = (khz / 1e6).toFixed(2) + " GHz"; })
+        .catch(() => { this._freqInFlight = false; });
     }
   }
   _ensureCoreMeters(n) {
@@ -50,6 +65,7 @@ export class CpuBox {
     }
   }
   update(m) {
+    this._refreshSystem();
     const total = m.cpu.total.last();
     this.pctEl.textContent = total.toFixed(0) + "%";
     this.totalMeter.render(total);

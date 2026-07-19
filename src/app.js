@@ -30,7 +30,7 @@ let metrics;
 
 function connect() {
   metrics = new Metrics({ interval: 2000 });
-  metrics.onsample((m) => { latest = m; hideBanner(); backoff = 1000; });
+  metrics.onsample((m) => { latest = m; render(); hideBanner(); backoff = 1000; });
   metrics.start();
   metrics.channel.addEventListener("close", (_e, opts) => {
     if (opts && opts.problem) {
@@ -45,12 +45,18 @@ const banner = document.getElementById("ctop-banner");
 function showBanner(msg) { banner.textContent = msg; banner.classList.remove("hidden"); }
 function hideBanner() { banner.classList.add("hidden"); }
 
-function paint() {
+// Repaint only when there is new data (samples arrive every ~2s) or on resize —
+// avoids burning CPU redrawing identical frames 60x/s in a monitoring tool.
+function render() {
   if (latest) { cpu.update(latest); mem.update(latest); net.update(latest); }
-  requestAnimationFrame(paint);
 }
 
+let resizeTimer = null;
+window.addEventListener("resize", () => {
+  if (resizeTimer) return;
+  resizeTimer = setTimeout(() => { resizeTimer = null; render(); }, 100);
+});
+
 connect();
-requestAnimationFrame(paint);
 
 window.addEventListener("beforeunload", () => { if (metrics) metrics.stop(); processes.stop(); });
