@@ -13,7 +13,9 @@ const METRICS = [
   { name: "cpu.temperature" },
   { name: "memory.used" },
   { name: "memory.cached" },
-  { name: "memory.available" },
+  // NOTE: the internal source does NOT support "memory.available" — requesting
+  // it makes the whole channel fail with "not-supported". We derive available
+  // as free+cached below (btop's fallback when MemAvailable is absent).
   { name: "memory.free" },
   { name: "memory.swap-used" },
   { name: "disk.dev.read",    units: "bytes", derive: "rate" },
@@ -112,8 +114,9 @@ export class Metrics {
 
     this.mem.used = this._get(sample, "memory.used") || 0;
     this.mem.cached = this._get(sample, "memory.cached") || 0;
-    this.mem.available = this._get(sample, "memory.available") || 0;
     this.mem.free = this._get(sample, "memory.free") || 0;
+    // memory.available isn't provided by the internal source; approximate.
+    this.mem.available = this.mem.free + this.mem.cached;
     this.mem.swapUsed = this._get(sample, "memory.swap-used") || 0;
     if (!this.mem.total) this.mem.total = this.mem.used + this.mem.available;
 
