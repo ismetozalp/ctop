@@ -1,0 +1,14 @@
+.proc-box { --box:#805252; }
+.proc-table { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; }
+.proc-table th { text-align:left; color:#eee; cursor:pointer; border-bottom:1px solid #303030; padding:2px 6px; user-select:none; }
+.proc-table td { padding:1px 6px; color:#ccc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.proc-table tbody tr:hover { background:#6a2f2f; cursor:pointer; }
+.proc-table .prog { max-width:180px; }
+.proc-popup { position:absolute; right:10px; top:24px; width:340px; background:#111; border:1px solid #805252; border-radius:6px; padding:8px; }
+.proc-popup.hidden { display:none; }
+.popup-head { display:flex; justify-content:space-between; color:#eee; margin-bottom:6px; }
+.popup-close { background:none; border:none; color:#b54040; cursor:pointer; }
+.popup-cmd { color:#606060; margin-top:6px; word-break:break-all; }
+.popup-actions { display:flex; gap:6px; margin-top:8px; }
+.popup-actions button { background:#2a2a2a; color:#ccc; border:1px solid #805252; border-radius:4px; cursor:pointer; padding:2px 6px; }
+.popup-msg { color:#0de756; margin-top:6px; min-height:16px; }
