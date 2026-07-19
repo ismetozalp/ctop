@@ -1,0 +1,56 @@
+:root { --bg:#000; --fg:#ccc; --dim:#606060; }
+html, body { margin:0; height:100%; background:var(--bg); color:var(--fg);
+  font-family: "DejaVu Sans Mono", "Liberation Mono", monospace; font-size:13px; }
+#ctop-root { padding:8px; }
+#ctop-status { color:var(--dim); }
+
+.box { border:1px solid var(--box); border-radius:6px; padding:6px 8px; margin:6px 0; position:relative; }
+.box-title { position:absolute; top:-9px; left:10px; background:var(--bg); padding:0 6px; color:#eee; }
+.cpu-box { --box:#556d59; }
+.cpu-header { display:flex; align-items:center; gap:12px; }
+.cpu-total-meter { width:180px; height:14px; }
+.cpu-graph { width:100%; height:90px; display:block; }
+.cpu-cores { display:grid; grid-template-columns:repeat(auto-fill, minmax(120px,1fr)); gap:2px 10px; margin-top:4px; }
+.core { display:flex; align-items:center; gap:6px; }
+.core-label { color:#606060; width:24px; } .core-pct { width:26px; text-align:right; }
+.core-meter { width:60px; height:12px; }
+
+.mem-box { --box:#6c6c4b; }
+.mem-row { display:flex; align-items:center; gap:8px; margin:2px 0; }
+.mem-label { width:80px; color:#606060; } .mem-meter { flex:0 0 160px; height:12px; } .mem-val { color:#ccc; }
+.mem-disk { display:flex; align-items:center; gap:8px; margin:2px 0; }
+.disk-label { width:60px; color:#606060; }
+.disk-io { display:flex; align-items:center; gap:4px; flex:1; }
+.io-tag { color:#606060; } .disk-r, .disk-w { flex:1; height:16px; }
+.mem-mount { display:flex; align-items:center; gap:8px; margin:2px 0; }
+.mount-label { width:140px; color:#606060; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.mount-meter { flex:0 0 120px; height:12px; } .mount-val { color:#ccc; }
+
+.net-box { --box:#5c588d; }
+.net-dir { display:flex; align-items:center; gap:8px; margin:3px 0; }
+.net-tag { width:16px; color:#606060; } .net-rx, .net-tx { flex:1; height:36px; }
+.net-rx-val, .net-tx-val { width:110px; text-align:right; color:#ccc; }
+
+.proc-box { --box:#805252; }
+.proc-table { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; }
+.proc-table th { text-align:left; color:#eee; cursor:pointer; border-bottom:1px solid #303030; padding:2px 6px; user-select:none; }
+.proc-table td { padding:1px 6px; color:#ccc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.proc-table tbody tr:hover { background:#6a2f2f; cursor:pointer; }
+.proc-table .prog { max-width:180px; }
+.proc-popup { position:absolute; right:10px; top:24px; width:340px; background:#111; border:1px solid #805252; border-radius:6px; padding:8px; }
+.proc-popup.hidden { display:none; }
+.popup-head { display:flex; justify-content:space-between; color:#eee; margin-bottom:6px; }
+.popup-close { background:none; border:none; color:#b54040; cursor:pointer; }
+.popup-cmd { color:#606060; margin-top:6px; word-break:break-all; }
+.popup-actions { display:flex; gap:6px; margin-top:8px; }
+.popup-actions button { background:#2a2a2a; color:#ccc; border:1px solid #805252; border-radius:4px; cursor:pointer; padding:2px 6px; }
+.popup-msg { color:#0de756; margin-top:6px; min-height:16px; }
+
+#ctop-grid { display:grid; grid-template-columns:45fr 55fr; grid-template-areas:"cpu cpu" "left proc"; gap:8px; }
+#slot-cpu { grid-area:cpu; } #slot-left { grid-area:left; } #slot-proc { grid-area:proc; }
+#ctop-banner { background:#3a1414; color:#ffb0b0; border:1px solid #b54040; border-radius:4px; padding:4px 8px; margin-bottom:6px; }
+#ctop-banner.hidden { display:none; }
+@media (max-width: 900px) {
+  #ctop-grid { grid-template-columns:1fr; grid-template-areas:"cpu" "left" "proc"; }
+}
+:root.pf-v6-theme-dark { --bg:#0f1319; }
