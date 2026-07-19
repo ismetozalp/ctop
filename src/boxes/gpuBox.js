@@ -4,6 +4,9 @@ import { Meter } from "../meter.js";
 import { theme } from "../theme.js";
 import { humanize } from "../humanize.js";
 import { RingBuffer } from "../ringbuffer.js";
+import { settings } from "../settings.js";
+
+const scale = (c) => settings.get("tempScale") === "F" ? { v: c * 9 / 5 + 32, u: "°F" } : { v: c, u: "°C" };
 
 export class GpuBox {
   constructor(root) { this.root = root; }
@@ -83,7 +86,8 @@ export class GpuBox {
           this.memValEl.textContent = "-- MiB / -- MiB";
         }
 
-        this.tempEl.textContent = (Number.isFinite(temp) ? temp.toFixed(0) : "--") + "°C";
+        if (Number.isFinite(temp)) { const s = scale(temp); this.tempEl.textContent = s.v.toFixed(0) + s.u; }
+        else this.tempEl.textContent = "--°C";
         this.powerEl.textContent = (Number.isFinite(power) ? power.toFixed(0) : "--") + " W";
       })
       .catch(() => {

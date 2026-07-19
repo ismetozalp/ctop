@@ -3,6 +3,7 @@ import { BrailleGraph } from "../graph.js";
 import { NetScaler } from "../netscale.js";
 import { theme } from "../theme.js";
 import { humanize } from "../humanize.js";
+import { settings } from "../settings.js";
 
 export class NetBox {
   constructor(root) {
@@ -68,11 +69,12 @@ export class NetBox {
     this._rxTotal += rxRate * 2;
     this._txTop = Math.max(this._txTop, txRate);
     this._txTotal += txRate * 2;
-    this.rxVal.textContent = humanize(rxRate, { perSecond: true });
-    this.txVal.textContent = humanize(txRate, { perSecond: true });
-    this.rxTopEl.textContent = `Top: ${humanize(this._rxTop, { perSecond: true })}`;
-    this.rxTotalEl.textContent = `Total: ${humanize(this._rxTotal)}`;
-    this.txTopEl.textContent = `Top: ${humanize(this._txTop, { perSecond: true })}`;
-    this.txTotalEl.textContent = `Total: ${humanize(this._txTotal)}`;
+    const bit = settings.get("netBits");
+    this.rxVal.textContent = humanize(rxRate, { bit, perSecond: true });
+    this.txVal.textContent = humanize(txRate, { bit, perSecond: true });
+    this.rxTopEl.textContent = `Top: ${humanize(this._rxTop, { bit, perSecond: true })}`;
+    this.rxTotalEl.textContent = `Total: ${humanize(this._rxTotal, { bit })}`;
+    this.txTopEl.textContent = `Top: ${humanize(this._txTop, { bit, perSecond: true })}`;
+    this.txTotalEl.textContent = `Total: ${humanize(this._txTotal, { bit })}`;
   }
 }

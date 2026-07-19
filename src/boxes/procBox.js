@@ -2,6 +2,8 @@
 import { sortProcs } from "../sort.js";
 import { humanize } from "../humanize.js";
 import { theme } from "../theme.js";
+import { BrailleGraph } from "../graph.js";
+import { RingBuffer } from "../ringbuffer.js";
 
 function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
 
@@ -16,6 +18,7 @@ export class ProcBox {
     this.root = root; this.onkill = onkill; this.onrenice = onrenice; this.unitOf = unitOf; this.cwdOf = cwdOf;
     this.sortKey = "cpu"; this.reversed = false;
     this._list = []; this._selected = null; this.filter = ""; this.tree = false; this._collapsed = new Set();
+    this._cpuHist = new Map();
   }
   mount() {
     this.root.innerHTML = `
@@ -50,7 +53,20 @@ export class ProcBox {
     this.tbody = this.root.querySelector("tbody");
     this.popup = this.root.querySelector(".proc-popup");
   }
-  update(list) { this._list = list; this._render(); }
+  update(list) {
+    this._list = list;
+    const seen = new Set();
+    for (const p of list) {
+      seen.add(p.pid);
+      let hist = this._cpuHist.get(p.pid);
+      if (!hist) { hist = new RingBuffer(60); this._cpuHist.set(p.pid, hist); }
+      hist.push(p.cpu);
+    }
+    for (const pid of Array.from(this._cpuHist.keys())) {
+      if (!seen.has(pid)) this._cpuHist.delete(pid);
+    }
+    this._render();
+  }
   _filtered() {
     if (!this.filter) return this._list;
     const f = this.filter;
@@ -140,6 +156,7 @@ export class ProcBox {
         <div>Cpu: ${p.cpu.toFixed(1)}%</div>
         <div class="popup-unit">Unit: <span class="popup-unit-val">…</span></div>
         <div class="popup-cmd">${esc(p.command || p.program)}</div>
+        <canvas class="popup-spark"></canvas>
       </div>
       <div class="popup-label">Signal</div>
       <div class="popup-actions">
@@ -158,6 +175,8 @@ export class ProcBox {
         <input class="renice-val" type="number" min="-20" max="19" value="0" title="niceness -20..19">
         <button class="renice-apply">Apply</button>
       </div>
+      <div class="popup-label">Sockets</div>
+      <div class="popup-sockets">…</div>
       <div class="popup-msg"></div>`;
     const msg = (t) => { this.popup.querySelector(".popup-msg").textContent = t; };
     const jump = (path) => { if (window.cockpit && window.cockpit.jump) window.cockpit.jump(path); };
@@ -194,5 +213,40 @@ export class ProcBox {
       this.popup.querySelector(".popup-unit-val").textContent = unit || "—";
       if (unit) { svcBtn.disabled = false; logBtn.disabled = false; }
     });
+    const hist = this._cpuHist.get(p.pid);
+    if (hist && hist.length) {
+      const sparkCanvas = this.popup.querySelector(".popup-spark");
+      new BrailleGraph(sparkCanvas, { height: 2, gradient: theme.gradients.process }).render(hist.toArray(), { maxValue: 100 });
+    }
+    this._loadSockets(p);
+  }
+  _loadSockets(p) {
+    const el = this.popup.querySelector(".popup-sockets");
+    if (!window.cockpit || !window.cockpit.spawn) { el.textContent = "no listening/connected sockets"; return; }
+    window.cockpit.spawn(["ss", "-tunpH"], { superuser: "try", err: "message" })
+      .then((out) => {
+        if (this._selected !== p) return;
+        const needle = `pid=${p.pid},`;
+        const entries = [];
+        for (const line of out.split("\n")) {
+          if (!line.includes(needle)) continue;
+          const cols = line.trim().split(/\s+/);
+          if (cols.length < 5) continue;
+          const local = cols[4];
+          const peer = cols[5] || "";
+          entries.push(`${local} -> ${peer}`);
+          if (entries.length >= 6) break;
+        }
+        el.textContent = "";
+        if (!entries.length) { el.textContent = "no listening/connected sockets"; return; }
+        const ul = document.createElement("ul");
+        for (const entry of entries) {
+          const li = document.createElement("li");
+          li.textContent = entry;
+          ul.appendChild(li);
+        }
+        el.appendChild(ul);
+      })
+      .catch(() => { if (this._selected === p) el.textContent = "no listening/connected sockets"; });
   }
 }

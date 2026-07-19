@@ -2,6 +2,9 @@
 import { BrailleGraph } from "../graph.js";
 import { Meter } from "../meter.js";
 import { theme } from "../theme.js";
+import { settings } from "../settings.js";
+
+const scale = (c) => settings.get("tempScale") === "F" ? { v: c * 9 / 5 + 32, u: "°F" } : { v: c, u: "°C" };
 
 export class CpuBox {
   constructor(root) { this.root = root; }
@@ -169,14 +172,16 @@ export class CpuBox {
       if (coreTemps && coreTemps.length) {
         const physIdx = Math.floor(i * coreTemps.length / nCores);
         const t = coreTemps[physIdx];
-        if (t !== undefined) text += " " + t.toFixed(0) + "°C";
+        if (t !== undefined) { const s = scale(t); text += " " + s.v.toFixed(0) + s.u; }
       }
       this._coreMeters[i].pct.textContent = text;
     });
     if (this._coreTemps && this._coreTemps.packageTemp != null) {
-      this.tempEl.textContent = this._coreTemps.packageTemp.toFixed(0) + "°C";
+      const s = scale(this._coreTemps.packageTemp);
+      this.tempEl.textContent = s.v.toFixed(0) + s.u;
     } else if (m.cpu.temp.length) {
-      this.tempEl.textContent = m.cpu.temp.last().toFixed(0) + "°C";
+      const s = scale(m.cpu.temp.last());
+      this.tempEl.textContent = s.v.toFixed(0) + s.u;
     }
     if (m.cpu.model && this.modelEl.textContent !== m.cpu.model) this.modelEl.textContent = m.cpu.model;
     this.clockEl.textContent = new Date().toLocaleTimeString();
