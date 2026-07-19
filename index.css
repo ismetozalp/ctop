@@ -201,3 +201,15 @@ html, body { overflow-x: hidden; }
 .proc-scroll { overflow-x: auto; max-width: 100%; }
 .cpu-header, .gpu-misc-row { flex-wrap: wrap; }
 .box { overflow-wrap: anywhere; }
+
+/* ---- process detail popup: deep-link actions + renice ---- */
+.popup-label { color:#606060; font-size:0.85em; margin:6px 0 2px; }
+.popup-unit .popup-unit-val { color:#0de756; }
+.popup-links { display:flex; gap:6px; flex-wrap:wrap; }
+.popup-links button, .popup-renice button {
+  background:#2a2a2a; color:#ccc; border:1px solid #556d59; border-radius:4px; cursor:pointer; padding:2px 8px;
+}
+.popup-links button[disabled] { opacity:0.4; cursor:default; }
+.popup-links button:not([disabled]):hover, .popup-renice button:hover { background:#3a3a3a; }
+.popup-renice { display:flex; gap:6px; align-items:center; }
+.renice-val { width:56px; background:rgba(255,255,255,0.05); border:1px solid #444; color:#ccc; font:inherit; padding:2px 4px; border-radius:3px; }

@@ -26,7 +26,12 @@ const gpu = new GpuBox(document.getElementById("slot-gpu")); gpu.mount();
 const battery = new BatteryBox(document.getElementById("slot-bat")); battery.mount();
 
 const processes = new Processes({ interval: 2000 });
-const proc = new ProcBox(document.getElementById("slot-proc"), { onkill: (pid, sig) => processes.kill(pid, sig) });
+const proc = new ProcBox(document.getElementById("slot-proc"), {
+  onkill: (pid, sig) => processes.kill(pid, sig),
+  onrenice: (pid, v) => processes.renice(pid, v),
+  unitOf: (pid) => processes.unitOf(pid),
+  cwdOf: (pid) => processes.cwdOf(pid),
+});
 proc.mount();
 processes.start((list) => proc.update(list));
 

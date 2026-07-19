@@ -12,8 +12,9 @@ const COLS = [
 ];
 
 export class ProcBox {
-  constructor(root, { onkill } = {}) {
-    this.root = root; this.onkill = onkill; this.sortKey = "cpu"; this.reversed = false;
+  constructor(root, { onkill, onrenice, unitOf, cwdOf } = {}) {
+    this.root = root; this.onkill = onkill; this.onrenice = onrenice; this.unitOf = unitOf; this.cwdOf = cwdOf;
+    this.sortKey = "cpu"; this.reversed = false;
     this._list = []; this._selected = null; this.filter = ""; this.tree = false; this._collapsed = new Set();
   }
   mount() {
@@ -128,6 +129,7 @@ export class ProcBox {
   }
   _openDetail(p) {
     this._selected = p;
+    this._detailUnit = null;
     this.popup.classList.remove("hidden");
     this.popup.innerHTML = `
       <div class="popup-head">${esc(p.program)} <span class="popup-pid">pid ${p.pid}</span>
@@ -136,21 +138,61 @@ export class ProcBox {
         <div>User: ${esc(p.user)}</div><div>Parent: ${p.ppid}</div>
         <div>Threads: ${p.threads}</div><div>Memory: ${humanize(p.rss)}</div>
         <div>Cpu: ${p.cpu.toFixed(1)}%</div>
+        <div class="popup-unit">Unit: <span class="popup-unit-val">…</span></div>
         <div class="popup-cmd">${esc(p.command || p.program)}</div>
       </div>
+      <div class="popup-label">Signal</div>
       <div class="popup-actions">
         <button data-sig="TERM">TERM (15)</button>
         <button data-sig="KILL">KILL (9)</button>
         <button data-sig="HUP">HUP (1)</button>
       </div>
+      <div class="popup-label">Go to (Cockpit)</div>
+      <div class="popup-links">
+        <button class="link-service" disabled>Service ↗</button>
+        <button class="link-logs" disabled>Logs ↗</button>
+        <button class="link-files">Files: cwd ↗</button>
+      </div>
+      <div class="popup-label">Renice</div>
+      <div class="popup-renice">
+        <input class="renice-val" type="number" min="-20" max="19" value="0" title="niceness -20..19">
+        <button class="renice-apply">Apply</button>
+      </div>
       <div class="popup-msg"></div>`;
+    const msg = (t) => { this.popup.querySelector(".popup-msg").textContent = t; };
+    const jump = (path) => { if (window.cockpit && window.cockpit.jump) window.cockpit.jump(path); };
     this.popup.querySelector(".popup-close").addEventListener("click", () => this.popup.classList.add("hidden"));
     this.popup.querySelectorAll(".popup-actions button").forEach((b) => {
       b.addEventListener("click", () => {
         this.onkill(p.pid, b.dataset.sig)
-          .then(() => { this.popup.querySelector(".popup-msg").textContent = `Sent SIG${b.dataset.sig}`; })
-          .catch((e) => { this.popup.querySelector(".popup-msg").textContent = "Failed: " + (e.message || e.problem || "denied"); });
+          .then(() => msg(`Sent SIG${b.dataset.sig}`))
+          .catch((e) => msg("Failed: " + (e.message || e.problem || "denied")));
       });
+    });
+    const svcBtn = this.popup.querySelector(".link-service");
+    const logBtn = this.popup.querySelector(".link-logs");
+    svcBtn.addEventListener("click", () => { if (this._detailUnit) jump("/system/services#/" + this._detailUnit); });
+    logBtn.addEventListener("click", () => { if (this._detailUnit) jump("/system/logs#/?prio=debug&_SYSTEMD_UNIT=" + encodeURIComponent(this._detailUnit)); });
+    this.popup.querySelector(".link-files").addEventListener("click", () => {
+      if (!this.cwdOf) { msg("cwd unavailable"); return; }
+      this.cwdOf(p.pid).then((cwd) => {
+        if (this._selected !== p) return;
+        if (cwd) jump("/files#" + cwd.split("/").map(encodeURIComponent).join("/"));
+        else msg("cwd not accessible");
+      });
+    });
+    this.popup.querySelector(".renice-apply").addEventListener("click", () => {
+      if (!this.onrenice) { msg("renice unavailable"); return; }
+      const v = this.popup.querySelector(".renice-val").value;
+      this.onrenice(p.pid, v)
+        .then(() => { if (this._selected === p) msg("Reniced to " + v); })
+        .catch((e) => { if (this._selected === p) msg("Renice failed: " + (e.message || e.problem || "denied")); });
+    });
+    if (this.unitOf) this.unitOf(p.pid).then((unit) => {
+      if (this._selected !== p) return; // popup moved on
+      this._detailUnit = unit;
+      this.popup.querySelector(".popup-unit-val").textContent = unit || "—";
+      if (unit) { svcBtn.disabled = false; logBtn.disabled = false; }
     });
   }
 }
