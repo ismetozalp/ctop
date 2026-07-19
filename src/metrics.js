@@ -86,22 +86,29 @@ export class Metrics {
   _get(sample, name) { const e = this._index[name]; return e ? sample[e.pos] : undefined; }
 
   _applySample(sample) {
-    // CPU total % = (user+system+nice) rates are jiffies/s; normalize by core count.
+    // cpu.basic.* are counters in MILLISECONDS of CPU time; with derive:"rate"
+    // the channel delivers ms/s. One fully-busy core = 1000 ms/s, so the
+    // aggregate busy% = (user+system+nice) / (1000 * cores) * 100. (Verified
+    // against the live metrics1 channel meta: units "millisec". The first rate
+    // sample arrives as `false` -> coerces to 0 -> 0% for one frame.)
     const u = this._get(sample, "cpu.basic.user") || 0;
     const s = this._get(sample, "cpu.basic.system") || 0;
     const n = this._get(sample, "cpu.basic.nice") || 0;
     const cores = Math.max(1, this.cpu.cores.length);
-    // jiffies are USER_HZ (100/s) per core; total busy fraction:
-    const totalPct = Math.min(100, (u + s + n) / (100 * cores) * 100);
+    const totalPct = Math.min(100, (u + s + n) / (1000 * cores) * 100);
     this.cpu.total.push(totalPct);
     const cu = this._get(sample, "cpu.core.user") || [];
     const cs = this._get(sample, "cpu.core.system") || [];
     const cn = this._get(sample, "cpu.core.nice") || [];
+    // per-core value is already per-core ms/s: fully busy = 1000 ms/s = 100%.
     this.cpu.cores.forEach((rb, i) => {
-      rb.push(Math.min(100, ((cu[i] || 0) + (cs[i] || 0) + (cn[i] || 0)) / 100 * 100));
+      rb.push(Math.min(100, ((cu[i] || 0) + (cs[i] || 0) + (cn[i] || 0)) / 1000 * 100));
     });
+    // cpu.temperature is an array of per-sensor °C; use the hottest as the CPU
+    // temp (the channel exposes sensor paths but no labels to pick the package).
     const temp = this._get(sample, "cpu.temperature");
-    if (temp !== undefined && temp !== null) this.cpu.temp.push(Array.isArray(temp) ? temp[0] : temp);
+    if (temp !== undefined && temp !== null && temp !== false)
+      this.cpu.temp.push(Array.isArray(temp) ? Math.max(...temp) : temp);
 
     this.mem.used = this._get(sample, "memory.used") || 0;
     this.mem.cached = this._get(sample, "memory.cached") || 0;
