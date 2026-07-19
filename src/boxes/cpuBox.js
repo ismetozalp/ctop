@@ -15,6 +15,8 @@ export class CpuBox {
           <span class="cpu-freq"></span>
           <span class="cpu-load">load: -- -- --</span>
           <span class="cpu-temp"></span>
+          <span class="cpu-clock"></span>
+          <span class="cpu-uptime"></span>
           <span class="cpu-model"></span>
         </div>
         <canvas class="cpu-graph"></canvas>
@@ -29,8 +31,12 @@ export class CpuBox {
     this.tempEl = this.root.querySelector(".cpu-temp");
     this.freqEl = this.root.querySelector(".cpu-freq");
     this.modelEl = this.root.querySelector(".cpu-model");
+    this.clockEl = this.root.querySelector(".cpu-clock");
+    this.uptimeEl = this.root.querySelector(".cpu-uptime");
     this.coresEl = this.root.querySelector(".cpu-cores");
     this._coreMeters = [];
+    this._coreTemps = null; // { packageTemp, cores: [n,...] }
+    this._hwmonPath = null; // cached coretemp hwmon dir, "" if none found
     this._refreshSystem();
   }
   // Load average + CPU frequency aren't in the metrics1 channel; read them from
@@ -50,6 +56,87 @@ export class CpuBox {
         .then((c) => { this._freqInFlight = false; const khz = parseInt(c, 10); if (khz > 0) this.freqEl.textContent = (khz / 1e6).toFixed(2) + " GHz"; })
         .catch(() => { this._freqInFlight = false; });
     }
+    if (!this._uptimeInFlight) {
+      this._uptimeInFlight = true;
+      window.cockpit.file("/proc/uptime").read()
+        .then((c) => {
+          this._uptimeInFlight = false;
+          if (!c) return;
+          const secs = parseFloat(c.split(" ")[0]);
+          if (!(secs >= 0)) return;
+          const days = Math.floor(secs / 86400);
+          const hh = Math.floor((secs % 86400) / 3600);
+          const mm = Math.floor((secs % 3600) / 60);
+          const hhmm = `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+          this.uptimeEl.textContent = days > 0 ? `up ${days}d ${hhmm}` : `up ${hhmm}`;
+        })
+        .catch(() => { this._uptimeInFlight = false; });
+    }
+    this._refreshCoreTemps();
+  }
+  // Discover the coretemp (or k10temp) hwmon dir once, then poll its
+  // temp*_input files each cycle. Per-core mapping isn't in the metrics
+  // channel, so this box reads sysfs directly.
+  _refreshCoreTemps() {
+    if (!window.cockpit) return;
+    if (this._tempInFlight) return;
+    this._tempInFlight = true;
+    const finish = () => { this._tempInFlight = false; };
+
+    const readLabelsAndValues = (dir) => {
+      window.cockpit.spawn(["sh", "-c", `grep -H . ${dir}/temp*_label 2>/dev/null; grep -H . ${dir}/temp*_input 2>/dev/null`], { err: "message" })
+        .then((out) => {
+          const labels = {};
+          const values = {};
+          out.split("\n").forEach((line) => {
+            const m = line.match(/temp(\d+)_(label|input):(.*)$/);
+            if (!m) return;
+            const idx = m[1];
+            if (m[2] === "label") labels[idx] = m[3].trim();
+            else values[idx] = parseInt(m[3], 10);
+          });
+          let packageTemp = null;
+          const cores = [];
+          Object.keys(labels).forEach((idx) => {
+            const label = labels[idx];
+            const v = values[idx];
+            if (v === undefined || Number.isNaN(v)) return;
+            const celsius = v / 1000;
+            if (/package/i.test(label)) packageTemp = celsius;
+            else if (/^core\s*(\d+)/i.test(label)) {
+              const cm = label.match(/^core\s*(\d+)/i);
+              cores[parseInt(cm[1], 10)] = celsius;
+            }
+          });
+          this._coreTemps = { packageTemp, cores };
+          finish();
+        })
+        .catch(finish);
+    };
+
+    if (this._hwmonPath !== null) {
+      if (this._hwmonPath) readLabelsAndValues(this._hwmonPath);
+      else finish();
+      return;
+    }
+
+    window.cockpit.spawn(["sh", "-c", "for f in /sys/class/hwmon/hwmon*/name; do echo \"$f:$(cat \"$f\" 2>/dev/null)\"; done"], { err: "message" })
+      .then((out) => {
+        let found = "";
+        let fallback = "";
+        out.split("\n").forEach((line) => {
+          const m = line.match(/^(.*)\/name:(.*)$/);
+          if (!m) return;
+          const dir = m[1];
+          const name = m[2].trim();
+          if (name === "coretemp") found = dir;
+          else if (name === "k10temp" && !fallback) fallback = dir;
+        });
+        this._hwmonPath = found || fallback || "";
+        if (this._hwmonPath) readLabelsAndValues(this._hwmonPath);
+        else finish();
+      })
+      .catch(finish);
   }
   _ensureCoreMeters(n) {
     if (this._coreMeters.length === n) return;
@@ -58,10 +145,10 @@ export class CpuBox {
     for (let i = 0; i < n; i++) {
       const wrap = document.createElement("div");
       wrap.className = "core";
-      wrap.innerHTML = `<span class="core-label">c${i}</span><canvas class="core-meter"></canvas><span class="core-pct">--</span>`;
+      wrap.innerHTML = `<span class="core-label">c${i}</span><canvas class="core-graph"></canvas><span class="core-pct">--</span>`;
       this.coresEl.appendChild(wrap);
       this._coreMeters.push({
-        meter: new Meter(wrap.querySelector(".core-meter"), { gradient: theme.gradients.cpu, bgColor: theme.colors.meter_bg }),
+        graph: new BrailleGraph(wrap.querySelector(".core-graph"), { height: 1, gradient: theme.gradients.cpu }),
         pct: wrap.querySelector(".core-pct"),
       });
     }
@@ -73,12 +160,25 @@ export class CpuBox {
     this.totalMeter.render(total);
     this.graph.render(m.cpu.total.toArray());
     this._ensureCoreMeters(m.cpu.cores.length);
+    const nCores = m.cpu.cores.length;
+    const coreTemps = this._coreTemps && this._coreTemps.cores;
     m.cpu.cores.forEach((rb, i) => {
       const v = rb.last();
-      this._coreMeters[i].meter.render(v);
-      this._coreMeters[i].pct.textContent = v.toFixed(0);
+      this._coreMeters[i].graph.render(rb.toArray());
+      let text = v.toFixed(0) + "%";
+      if (coreTemps && coreTemps.length) {
+        const physIdx = Math.floor(i * coreTemps.length / nCores);
+        const t = coreTemps[physIdx];
+        if (t !== undefined) text += " " + t.toFixed(0) + "°C";
+      }
+      this._coreMeters[i].pct.textContent = text;
     });
-    if (m.cpu.temp.length) this.tempEl.textContent = m.cpu.temp.last().toFixed(0) + "°C";
+    if (this._coreTemps && this._coreTemps.packageTemp != null) {
+      this.tempEl.textContent = this._coreTemps.packageTemp.toFixed(0) + "°C";
+    } else if (m.cpu.temp.length) {
+      this.tempEl.textContent = m.cpu.temp.last().toFixed(0) + "°C";
+    }
     if (m.cpu.model && this.modelEl.textContent !== m.cpu.model) this.modelEl.textContent = m.cpu.model;
+    this.clockEl.textContent = new Date().toLocaleTimeString();
   }
 }

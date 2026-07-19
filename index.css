@@ -55,3 +55,139 @@ html, body { margin:0; height:100%; background:var(--bg); color:var(--fg);
 }
 :root.pf-v6-theme-dark { --bg:#0f1319; }
 .cpu-model { margin-left:auto; color:#606060; }
+
+/* ---- btop-parity feature styles (merged from box fragments) ---- */
+/* cpuBox */
+/* src/boxes/cpuBox.extra.css
+   Extra rules for per-core braille graphs, clock, and uptime added to CpuBox.
+   Merged into the main stylesheet by the integration step; do not import
+   this file directly from cpuBox.js. */
+
+.cpu-cores .core {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cpu-cores .core-graph {
+  width: 90px;
+  height: 14px;
+}
+
+.cpu-cores .core-pct {
+  min-width: 4.5em;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.cpu-header .cpu-clock {
+  margin-left: 8px;
+}
+
+.cpu-header .cpu-uptime {
+  margin-left: 8px;
+  opacity: 0.8;
+}
+/* netBox */
+/* src/boxes/netBox.extra.css */
+.net-stats {
+  display: flex;
+  gap: 0.75em;
+}
+
+.net-top,
+.net-total {
+  font-size: 0.85em;
+  opacity: 0.6;
+}
+/* procBox */
+/* src/boxes/procBox.extra.css */
+.proc-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0;
+}
+
+.proc-filter {
+  flex: 1 1 auto;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid #444;
+  color: #ccc;
+  font: inherit;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.proc-filter:focus {
+  outline: none;
+  border-color: #888;
+}
+
+.proc-tree-toggle {
+  flex: 0 0 auto;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid #444;
+  color: #ccc;
+  font: inherit;
+  padding: 2px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.proc-tree-toggle:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.proc-tree-toggle.active {
+  background: #4b6c6c;
+  color: #fff;
+  border-color: #4b6c6c;
+}
+
+.tree-caret {
+  display: inline-block;
+  width: 1.2ch;
+  cursor: pointer;
+  color: #888;
+}
+
+.proc-table td.prog {
+  white-space: pre;
+}
+/* batteryBox */
+/* src/boxes/batteryBox.extra.css */
+.bat-box {
+  display: flex;
+  flex-direction: column;
+}
+.bat-body {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 4px;
+}
+.bat-meter {
+  width: 120px;
+  height: 12px;
+  flex: 0 0 auto;
+}
+.bat-pct,
+.bat-status,
+.bat-watts {
+  color: var(--ctop-dim-fg, #808080);
+  font-size: 0.9em;
+  white-space: nowrap;
+}
+/* gpuBox */
+/* src/boxes/gpuBox.extra.css */
+.gpu-box { --box:#4b6c6c; }
+.gpu-header { display:flex; align-items:center; margin-bottom:4px; }
+.gpu-name { color:#ccc; font-weight:bold; }
+.gpu-row { display:flex; align-items:center; gap:6px; margin:2px 0; }
+.gpu-label { width:40px; color:#606060; }
+.gpu-util-meter, .gpu-mem-meter { flex:0 0 160px; height:12px; }
+.gpu-util-pct, .gpu-mem-val { color:#ccc; }
+.gpu-graph { width:100%; height:40px; display:block; margin:4px 0; }
+.gpu-misc-row { justify-content:space-between; color:#ccc; }
+.gpu-temp, .gpu-power { color:#ccc; }

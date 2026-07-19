@@ -5,19 +5,24 @@ import { CpuBox } from "./boxes/cpuBox.js";
 import { MemBox } from "./boxes/memBox.js";
 import { NetBox } from "./boxes/netBox.js";
 import { ProcBox } from "./boxes/procBox.js";
+import { GpuBox } from "./boxes/gpuBox.js";
+import { BatteryBox } from "./boxes/batteryBox.js";
 
 const root = document.getElementById("ctop-root");
 root.innerHTML = `
   <div id="ctop-banner" class="hidden"></div>
   <div id="ctop-grid">
     <div id="slot-cpu" class="col-full"></div>
-    <div id="slot-left"><div id="slot-mem"></div><div id="slot-net"></div></div>
+    <div id="slot-left"><div id="slot-mem"></div><div id="slot-net"></div><div id="slot-gpu"></div><div id="slot-bat"></div></div>
     <div id="slot-proc"></div>
   </div>`;
 
 const cpu = new CpuBox(document.getElementById("slot-cpu")); cpu.mount();
 const mem = new MemBox(document.getElementById("slot-mem")); mem.mount();
 const net = new NetBox(document.getElementById("slot-net")); net.mount();
+// Self-polling boxes (read their own sources, not the metrics channel):
+const gpu = new GpuBox(document.getElementById("slot-gpu")); gpu.mount();
+const battery = new BatteryBox(document.getElementById("slot-bat")); battery.mount();
 
 const processes = new Processes({ interval: 2000 });
 const proc = new ProcBox(document.getElementById("slot-proc"), { onkill: (pid, sig) => processes.kill(pid, sig) });
@@ -59,4 +64,4 @@ window.addEventListener("resize", () => {
 
 connect();
 
-window.addEventListener("beforeunload", () => { if (metrics) metrics.stop(); processes.stop(); });
+window.addEventListener("beforeunload", () => { if (metrics) metrics.stop(); processes.stop(); gpu.stop(); battery.stop(); });

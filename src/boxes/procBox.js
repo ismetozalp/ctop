@@ -12,14 +12,30 @@ const COLS = [
 ];
 
 export class ProcBox {
-  constructor(root, { onkill } = {}) { this.root = root; this.onkill = onkill; this.sortKey = "cpu"; this.reversed = false; this._list = []; this._selected = null; }
+  constructor(root, { onkill } = {}) {
+    this.root = root; this.onkill = onkill; this.sortKey = "cpu"; this.reversed = false;
+    this._list = []; this._selected = null; this.filter = ""; this.tree = false; this._collapsed = new Set();
+  }
   mount() {
     this.root.innerHTML = `
       <div class="box proc-box">
         <div class="box-title">proc</div>
+        <div class="proc-toolbar">
+          <input class="proc-filter" placeholder="filter…">
+          <button class="proc-tree-toggle">tree</button>
+        </div>
         <table class="proc-table"><thead><tr></tr></thead><tbody></tbody></table>
         <div class="proc-popup hidden"></div>
       </div>`;
+    this.root.querySelector(".proc-filter").addEventListener("input", (e) => {
+      this.filter = e.target.value.toLowerCase();
+      this._render();
+    });
+    this.root.querySelector(".proc-tree-toggle").addEventListener("click", () => {
+      this.tree = !this.tree;
+      this.root.querySelector(".proc-tree-toggle").classList.toggle("active", this.tree);
+      this._render();
+    });
     const tr = this.root.querySelector("thead tr");
     for (const col of COLS) {
       const th = document.createElement("th"); th.textContent = col.label; th.dataset.key = col.key;
@@ -34,17 +50,81 @@ export class ProcBox {
     this.popup = this.root.querySelector(".proc-popup");
   }
   update(list) { this._list = list; this._render(); }
-  _render() {
-    const sorted = sortProcs(this._list, this.sortKey, this.reversed);
-    this.tbody.innerHTML = "";
-    for (const p of sorted.slice(0, 200)) {
-      const tr = document.createElement("tr");
-      const cpuColor = theme.gradients.process[Math.min(100, Math.round(p.cpu))];
-      tr.innerHTML = `<td>${p.pid}</td><td class="prog">${esc(p.program)}</td><td>${p.threads}</td>
-        <td>${esc(p.user)}</td><td>${humanize(p.rss)}</td><td style="color:${cpuColor}">${p.cpu.toFixed(1)}</td>`;
-      tr.addEventListener("click", () => this._openDetail(p));
-      this.tbody.appendChild(tr);
+  _filtered() {
+    if (!this.filter) return this._list;
+    const f = this.filter;
+    return this._list.filter((p) =>
+      String(p.program).toLowerCase().includes(f) ||
+      String(p.user).toLowerCase().includes(f) ||
+      String(p.command || "").toLowerCase().includes(f)
+    );
+  }
+  _renderRow(p, depth, hasChildren) {
+    const tr = document.createElement("tr");
+    const cpuColor = theme.gradients.process[Math.min(100, Math.round(p.cpu))];
+    const td0 = document.createElement("td"); td0.textContent = String(p.pid);
+    const td1 = document.createElement("td"); td1.className = "prog";
+    if (this.tree) {
+      const indent = document.createElement("span");
+      indent.style.paddingLeft = `${depth * 2}ch`;
+      const caret = document.createElement("span");
+      caret.className = "tree-caret";
+      if (hasChildren) {
+        caret.textContent = this._collapsed.has(p.pid) ? "▸" : "▾";
+        caret.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (this._collapsed.has(p.pid)) this._collapsed.delete(p.pid);
+          else this._collapsed.add(p.pid);
+          this._render();
+        });
+      } else {
+        caret.textContent = "";
+      }
+      td1.appendChild(indent);
+      td1.appendChild(caret);
+      const label = document.createElement("span");
+      label.textContent = p.program;
+      td1.appendChild(label);
+    } else {
+      td1.textContent = p.program;
     }
+    const td2 = document.createElement("td"); td2.textContent = String(p.threads);
+    const td3 = document.createElement("td"); td3.textContent = p.user;
+    const td4 = document.createElement("td"); td4.textContent = humanize(p.rss);
+    const td5 = document.createElement("td"); td5.style.color = cpuColor; td5.textContent = p.cpu.toFixed(1);
+    tr.append(td0, td1, td2, td3, td4, td5);
+    tr.addEventListener("click", () => this._openDetail(p));
+    this.tbody.appendChild(tr);
+  }
+  _render() {
+    const list = this._filtered();
+    this.tbody.innerHTML = "";
+    if (!this.tree) {
+      const sorted = sortProcs(list, this.sortKey, this.reversed);
+      for (const p of sorted.slice(0, 200)) this._renderRow(p, 0, false);
+      return;
+    }
+    // tree mode
+    const pidSet = new Set(list.map((p) => p.pid));
+    const childrenMap = new Map();
+    for (const p of list) {
+      const key = p.ppid;
+      if (!childrenMap.has(key)) childrenMap.set(key, []);
+      childrenMap.get(key).push(p);
+    }
+    const roots = list.filter((p) => !p.ppid || !pidSet.has(p.ppid));
+    const sortSiblings = (arr) => sortProcs(arr, this.sortKey, this.reversed);
+    let count = 0;
+    const walk = (p, depth) => {
+      if (count >= 200) return;
+      const kids = childrenMap.get(p.pid) || [];
+      this._renderRow(p, depth, kids.length > 0);
+      count++;
+      if (kids.length && !this._collapsed.has(p.pid)) {
+        for (const child of sortSiblings(kids)) walk(child, depth + 1);
+      }
+    };
+    for (const root of sortSiblings(roots)) walk(root, 0);
   }
   _openDetail(p) {
     this._selected = p;
