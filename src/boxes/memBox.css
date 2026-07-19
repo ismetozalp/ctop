@@ -1,0 +1,10 @@
+.mem-box { --box:#6c6c4b; }
+.mem-row { display:flex; align-items:center; gap:8px; margin:2px 0; }
+.mem-label { width:80px; color:#606060; } .mem-meter { flex:0 0 160px; height:12px; } .mem-val { color:#ccc; }
+.mem-disk { display:flex; align-items:center; gap:8px; margin:2px 0; }
+.disk-label { width:60px; color:#606060; }
+.disk-io { display:flex; align-items:center; gap:4px; flex:1; }
+.io-tag { color:#606060; } .disk-r, .disk-w { flex:1; height:16px; }
+.mem-mount { display:flex; align-items:center; gap:8px; margin:2px 0; }
+.mount-label { width:140px; color:#606060; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.mount-meter { flex:0 0 120px; height:12px; } .mount-val { color:#ccc; }
