@@ -4,6 +4,9 @@ INSTALL_DIR = $(PREFIX)/$(NAME)
 VERSION := $(shell cat VERSION)
 TAG := v$(VERSION)
 DEVEL_DIR = $(HOME)/.local/share/cockpit/$(NAME)
+# End-to-end test config (override on the command line):
+CTOP_E2E_CREDS ?= $(HOME)/.config/claude/ctop-e2e/creds
+CTOP_BASE ?= https://localhost:9090
 
 # Release notes for `make publish`. Override on the command line, e.g.
 #   make publish RELEASE_NOTES="Fix the thing"
@@ -12,7 +15,7 @@ export RELEASE_NOTES
 
 FILES = manifest.json index.html index.css src README.md VERSION Makefile
 
-.PHONY: all help version test install uninstall devel-install devel-uninstall zip publish clean
+.PHONY: all help version test test-e2e test-e2e-smoke install uninstall devel-install devel-uninstall zip publish clean
 
 all: help
 
@@ -25,6 +28,8 @@ help:
 	@echo "  make devel-install    Symlink into $(DEVEL_DIR) for development (no root)"
 	@echo "  make devel-uninstall  Remove the development symlink"
 	@echo "  make test             Run the unit tests (node --test)"
+	@echo "  make test-e2e         Run the thorough Playwright e2e (needs creds + Cockpit)"
+	@echo "  make test-e2e-smoke   Run the quick Playwright e2e smoke test"
 	@echo "  make zip              Produce ctop-$(VERSION).zip"
 	@echo "  make publish          Build the zip and publish GitHub release $(TAG)"
 	@echo "  make version          Print current version"
@@ -35,6 +40,21 @@ version:
 
 test:
 	node --test
+
+# Thorough browser e2e. Requires: a Chrome/Chromium binary, a creds file
+# ($(CTOP_E2E_CREDS), two lines user/pass; see test/e2e/README.md), and ctop
+# served (make devel-install) with Cockpit reachable at $(CTOP_BASE).
+test-e2e: node_modules/playwright-core
+	@[ -f "$(CTOP_E2E_CREDS)" ] || { echo "Missing creds file: $(CTOP_E2E_CREDS) (see test/e2e/README.md)"; exit 1; }
+	CTOP_E2E_CREDS="$(CTOP_E2E_CREDS)" CTOP_BASE="$(CTOP_BASE)" node test/e2e/ctop_thorough.mjs
+
+test-e2e-smoke: node_modules/playwright-core
+	@[ -f "$(CTOP_E2E_CREDS)" ] || { echo "Missing creds file: $(CTOP_E2E_CREDS) (see test/e2e/README.md)"; exit 1; }
+	CTOP_E2E_CREDS="$(CTOP_E2E_CREDS)" CTOP_BASE="$(CTOP_BASE)" node test/e2e/ctop_test.mjs
+
+# Install the e2e dev dependency (playwright-core) on demand.
+node_modules/playwright-core:
+	npm install
 
 install:
 	@if [ "$$(id -u)" != "0" ]; then echo "install requires root (use sudo)"; exit 1; fi
