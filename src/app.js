@@ -13,7 +13,8 @@ root.innerHTML = `
   <div id="ctop-banner" class="hidden"></div>
   <div id="ctop-grid">
     <div id="slot-cpu" class="col-full"></div>
-    <div id="slot-left"><div id="slot-mem"></div><div id="slot-net"></div><div id="slot-gpu"></div><div id="slot-bat"></div></div>
+    <div id="slot-gpu"></div>
+    <div id="slot-left"><div id="slot-mem"></div><div id="slot-net"></div><div id="slot-bat"></div></div>
     <div id="slot-proc"></div>
   </div>`;
 
