@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><style>
+body{background:#000;margin:0;padding:12px}
+canvas{display:block;margin:8px 0;background:#111;width:600px}
+#g{height:80px}#m{height:16px}
+</style></head><body>
+<canvas id="g"></canvas>
+<canvas id="m"></canvas>
+<script type="module">
+import { BrailleGraph } from "../src/graph.js";
+import { Meter } from "../src/meter.js";
+import { buildGradient } from "../src/gradient.js";
+const grad = buildGradient("#77ca9b", "#cbc06c", "#dc4c4c");
+const g = new BrailleGraph(document.getElementById("g"), { height: 5, gradient: grad });
+const m = new Meter(document.getElementById("m"), { gradient: grad });
+const data = [];
+setInterval(() => {
+  data.push(50 + 45 * Math.sin(data.length / 6));
+  if (data.length > 600) data.shift();
+  g.render(data);
+  m.render(50 + 45 * Math.sin(data.length / 6));
+}, 100);
+</script></body></html>

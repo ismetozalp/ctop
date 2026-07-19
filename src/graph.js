@@ -33,3 +33,41 @@ export function quantize(data, width, height, opts = {}) {
   }
   return grid;
 }
+
+// --- appended to src/graph.js ---
+// Dot layout inside a braille cell: 2 columns x 4 rows. Level 0..4 = dots filled from bottom.
+export class BrailleGraph {
+  constructor(canvas, { height, gradient }) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext("2d");
+    this.rows = height;        // character rows
+    this.gradient = gradient;  // string[101]
+  }
+  render(data, { maxValue = 100, offset = 0, noZero = false } = {}) {
+    const dpr = window.devicePixelRatio || 1;
+    const cssW = this.canvas.clientWidth, cssH = this.canvas.clientHeight;
+    this.canvas.width = Math.round(cssW * dpr);
+    this.canvas.height = Math.round(cssH * dpr);
+    const ctx = this.ctx;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cssW, cssH);
+
+    const cols = Math.max(1, Math.floor(cssW / 2)); // 2px per braille column pair min
+    const grid = quantize(data, cols, this.rows, { maxValue, offset, noZero });
+    const cellW = cssW / cols;              // width of one 2-dot cell
+    const cellH = cssH / this.rows;         // height of one 4-dot cell
+    const dotW = cellW / 2, dotH = cellH / 4;
+
+    for (let row = 0; row < this.rows; row++) {
+      // color this row by its band midpoint percentage
+      const pct = Math.round(100 * (this.rows - row - 0.5) / this.rows);
+      ctx.fillStyle = this.gradient[Math.max(0, Math.min(100, pct))];
+      for (let c = 0; c < cols; c++) {
+        const [lv, rv] = grid[row][c];
+        const x = c * cellW, y = row * cellH;
+        for (let k = 0; k < lv; k++) ctx.fillRect(x, y + (3 - k) * dotH, dotW - 0.5, dotH - 0.5);
+        for (let k = 0; k < rv; k++) ctx.fillRect(x + dotW, y + (3 - k) * dotH, dotW - 0.5, dotH - 0.5);
+      }
+    }
+  }
+}
