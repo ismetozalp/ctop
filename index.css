@@ -191,3 +191,13 @@ html, body { margin:0; height:100%; background:var(--bg); color:var(--fg);
 .gpu-graph { width:100%; height:24px; display:block; margin:2px 0; }
 .gpu-misc-row { justify-content:space-between; color:#ccc; }
 .gpu-temp, .gpu-power { color:#ccc; }
+
+/* ---- responsive: prevent page-level horizontal scroll on resize ---- */
+/* Grid items default to min-width:auto, so wide content (the process table)
+   refuses to shrink and overflows the viewport. Let tracks shrink, keep the
+   wide table scrolling inside its own box, and let flex headers wrap. */
+html, body { overflow-x: hidden; }
+#slot-cpu, #slot-gpu, #slot-left, #slot-proc { min-width: 0; }
+.proc-scroll { overflow-x: auto; max-width: 100%; }
+.cpu-header, .gpu-misc-row { flex-wrap: wrap; }
+.box { overflow-wrap: anywhere; }

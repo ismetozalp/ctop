@@ -24,7 +24,7 @@ export class ProcBox {
           <input class="proc-filter" placeholder="filter…">
           <button class="proc-tree-toggle">tree</button>
         </div>
-        <table class="proc-table"><thead><tr></tr></thead><tbody></tbody></table>
+        <div class="proc-scroll"><table class="proc-table"><thead><tr></tr></thead><tbody></tbody></table></div>
         <div class="proc-popup hidden"></div>
       </div>`;
     this.root.querySelector(".proc-filter").addEventListener("input", (e) => {
