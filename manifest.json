@@ -1,6 +1,6 @@
 {
   "name": "ctop",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "requires": { "cockpit": "215" },
   "tools": {
     "index": { "label": "Cockpit Top", "path": "index.html", "order": 50 }

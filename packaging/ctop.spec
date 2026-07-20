@@ -1,5 +1,5 @@
 Name:           cockpit-ctop
-Version:        0.1.0
+Version:        1.0.0
 Release:        1%{?dist}
 Summary:        btop-style system monitor for Cockpit
 License:        MIT
