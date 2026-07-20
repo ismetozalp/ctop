@@ -15,8 +15,8 @@ const COLS = [
 ];
 
 export class ProcBox {
-  constructor(root, { onkill, onrenice, unitOf, cwdOf } = {}) {
-    this.root = root; this.onkill = onkill; this.onrenice = onrenice; this.unitOf = unitOf; this.cwdOf = cwdOf;
+  constructor(root, { onkill, onrenice, unitOf, cwdOf, openCwd } = {}) {
+    this.root = root; this.onkill = onkill; this.onrenice = onrenice; this.unitOf = unitOf; this.cwdOf = cwdOf; this.openCwd = openCwd;
     this.sortKey = "cpu"; this.reversed = false;
     this._list = []; this._selected = null; this.filter = ""; this.tree = false; this._collapsed = new Set();
     this._cpuHist = new Map();
@@ -194,8 +194,10 @@ export class ProcBox {
     svcBtn.addEventListener("click", () => { if (this._detailUnit) jump("/system/services#/" + this._detailUnit); });
     logBtn.addEventListener("click", () => { if (this._detailUnit) jump("/system/logs#/?prio=debug&_SYSTEMD_UNIT=" + encodeURIComponent(this._detailUnit)); });
     const filesBtn = this.popup.querySelector(".link-files");
-    // Kernel threads have no cmdline (ps shows it in [brackets]) and thus no cwd.
-    if (isKernelThread(p.command)) {
+    if (!this.openCwd) {
+      filesBtn.style.display = "none"; // no file-browser plugin installed
+    } else if (isKernelThread(p.command)) {
+      // Kernel threads have no cmdline (ps shows it in [brackets]) and thus no cwd.
       filesBtn.disabled = true;
       filesBtn.title = "Kernel thread — no working directory";
     }
@@ -204,8 +206,8 @@ export class ProcBox {
       if (!this.cwdOf) { msg("cwd unavailable"); return; }
       this.cwdOf(p.pid).then((cwd) => {
         if (this._selected !== p) return;
-        if (cwd) jump("/files#" + cwd.split("/").map(encodeURIComponent).join("/"));
-        else msg("No working directory: the process may have exited, or — without Administrative access — it belongs to another user.");
+        if (cwd && this.openCwd) this.openCwd(cwd);
+        else if (!cwd) msg("No working directory: the process may have exited, or — without Administrative access — it belongs to another user.");
       });
     });
     this.popup.querySelector(".renice-apply").addEventListener("click", () => {

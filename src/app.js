@@ -10,6 +10,7 @@ import { BatteryBox } from "./boxes/batteryBox.js";
 import { theme } from "./theme.js";
 import { settings } from "./settings.js";
 import { Updater } from "./update.js";
+import { fileBrowserUrl, availableFileBrowsers } from "./navigate.js";
 // Tier-2/3 boxes are wired in by the integration step:
 import { ContainersBox } from "./boxes/containersBox.js";
 import { SensorsBox } from "./boxes/sensorsBox.js";
@@ -26,6 +27,7 @@ root.innerHTML = `
     <label>theme <select id="tb-theme"></select></label>
     <label>temp <select id="tb-temp"><option value="C">°C</option><option value="F">°F</option></select></label>
     <label>net <select id="tb-netunit"><option value="byte">B/s</option><option value="bit">b/s</option></select></label>
+    <label>open <select id="tb-filebrowser"><option value="files">Files</option><option value="explorer">Explorer</option></select></label>
     <label><input type="checkbox" id="tb-notify"> notify</label>
     <div id="tb-boxes-wrap">
       <button id="tb-boxes">boxes ▾</button>
@@ -63,12 +65,21 @@ const sensors = new SensorsBox(document.getElementById("slot-sensors")); sensors
 const containers = new ContainersBox(document.getElementById("slot-containers")); containers.mount();
 const history = new HistoryBox(document.getElementById("slot-history")); history.mount();
 
+// Installed file-browser plugins → drive the cwd action + toolbar selector.
+const fileBrowsers = availableFileBrowsers(window.cockpit && window.cockpit.manifests);
+if (fileBrowsers.length && !fileBrowsers.includes(settings.get("fileBrowser"))) settings.set("fileBrowser", fileBrowsers[0]);
+// null when no file browser is installed -> ProcBox hides the "Files: cwd" button.
+const fileNav = fileBrowsers.length
+  ? (path) => { if (window.cockpit && window.cockpit.jump) window.cockpit.jump(fileBrowserUrl(path, settings.get("fileBrowser"))); }
+  : null;
+
 let processes = new Processes({ interval: settings.get("interval") });
 const proc = new ProcBox(document.getElementById("slot-proc"), {
   onkill: (pid, sig) => processes.kill(pid, sig),
   onrenice: (pid, v) => processes.renice(pid, v),
   unitOf: (pid) => processes.unitOf(pid),
   cwdOf: (pid) => processes.cwdOf(pid),
+  openCwd: fileNav,
 });
 proc.mount();
 function startProcesses() { processes.start((list) => { if (!settings.get("paused")) proc.update(list); }); }
@@ -164,6 +175,17 @@ tempSel.addEventListener("change", () => { settings.set("tempScale", tempSel.val
 const netUnitSel = document.getElementById("tb-netunit");
 netUnitSel.value = settings.get("netBits") ? "bit" : "byte";
 netUnitSel.addEventListener("change", () => { settings.set("netBits", netUnitSel.value === "bit"); if (latest) render(); });
+
+const fbSel = document.getElementById("tb-filebrowser");
+const fbLabel = fbSel.closest("label");
+if (fileBrowsers.length >= 2) {
+  // keep only installed options, then let the user choose
+  Array.from(fbSel.options).forEach((o) => { if (!fileBrowsers.includes(o.value)) o.remove(); });
+  fbSel.value = settings.get("fileBrowser");
+  fbSel.addEventListener("change", () => settings.set("fileBrowser", fbSel.value));
+} else if (fbLabel) {
+  fbLabel.style.display = "none"; // 0 or 1 installed: nothing to choose
+}
 
 const notifyChk = document.getElementById("tb-notify");
 notifyChk.checked = !!settings.get("notify");

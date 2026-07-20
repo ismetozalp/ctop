@@ -8,6 +8,7 @@ const DEFAULTS = {
   tempScale: "C",      // "C" | "F"
   netBits: false,      // false = bytes/s, true = bits/s
   notify: false,       // browser notifications on threshold breach
+  fileBrowser: "files", // "files" (Cockpit Files) or "explorer"
   updateRepo: "ismetozalp/ctop", // GitHub owner/repo checked for self-update
   updateCheckOnStart: true,      // auto-check for a newer release at startup
   thresholds: { cpu: 90, mem: 90, temp: 90 },
