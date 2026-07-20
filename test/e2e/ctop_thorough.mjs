@@ -188,18 +188,22 @@ if (await f.locator(".proc-table tbody tr").count()) {
   ktDisabled = await f.evaluate(() => !!document.querySelector(".link-files")?.disabled);
   await f.evaluate(() => { const c = document.querySelector(".popup-close"); if (c) c.click(); });
 }
+// a guaranteed real userspace process (cockpit-bridge is always running) has it enabled
+await f.fill(".proc-filter", "cockpit-bridge");
+await sleep(700);
+if (await f.locator(".proc-table tbody tr").count()) {
+  await f.locator(".proc-table tbody tr").first().click();
+  await sleep(1000);
+  regEnabled = await f.evaluate(() => document.querySelector(".link-files") && !document.querySelector(".link-files").disabled);
+  await f.evaluate(() => { const c = document.querySelector(".popup-close"); if (c) c.click(); });
+}
 await f.fill(".proc-filter", "");
-await sleep(500);
-// a real userspace process (top of the cpu-sorted list) should have it enabled
-await f.locator(".proc-table tbody tr").nth(1).click();
-await sleep(1000);
-regEnabled = await f.evaluate(() => document.querySelector(".link-files") && !document.querySelector(".link-files").disabled);
-await f.evaluate(() => { const c = document.querySelector(".popup-close"); if (c) c.click(); });
+await sleep(400);
 check("Files-cwd disabled for kernel thread, enabled for real process", ktDisabled === true && regEnabled === true, `kthread=${ktDisabled} regular=${regEnabled}`);
 
 // ---------- keyboard: p toggles pause ----------
 const pauseLabelBefore = await f.evaluate(() => document.getElementById("tb-pause").textContent);
-await f.evaluate(() => document.body.focus());
+await f.evaluate(() => { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); });
 await p.keyboard.press("p");
 await sleep(500);
 const pauseLabelAfter = await f.evaluate(() => document.getElementById("tb-pause").textContent);
