@@ -23,5 +23,5 @@ cp -r %{_sourcedir}/ctop/manifest.json %{_sourcedir}/ctop/index.html \
 %{_datadir}/cockpit/ctop
 
 %changelog
-* Sun Jul 19 2026 ismetozalp <ismetozalp@users.noreply.github.com> - 0.1.0-1
-- Initial package
+* Mon Jul 20 2026 ismetozalp <ismetozalp@users.noreply.github.com> - 1.0.0-1
+- Initial 1.0.0 release
