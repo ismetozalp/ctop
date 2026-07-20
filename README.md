@@ -12,10 +12,10 @@ A **[btop](https://github.com/aristocratos/btop)-style system monitor as a nativ
 - **GPU** — NVIDIA util + VRAM + temperature + power (via `nvidia-smi`), hidden when absent.
 - **Sensors** — every hwmon temperature and **fan RPM** beyond the CPU package.
 - **Containers** — live `podman` container CPU / memory / net I/O.
-- **Processes** — sortable table (kill / TERM / signal, **renice**), filter/search, **tree** view, a per-PID CPU sparkline, open sockets, and **deep-links** to the process's systemd **Service**, its **Logs**, and its working directory in the **File browser**.
+- **Processes** — sortable table (kill / TERM / signal, **renice**), filter/search, **tree** view, a per-PID CPU sparkline, open sockets, and **deep-links** to the process's systemd **Service**, its **Logs**, and its working directory in a **file browser** — Cockpit Files or the [Explorer](https://github.com/ismetozalp/explorer) plugin, auto-detected (the button hides if neither is installed).
 - **History** — back-in-time CPU history from the PCP archive (optional; enable via *boxes ▾*).
 - **Themes** — loads any of btop's `.theme` files installed on the host and recolors live.
-- **Toolbar** — pause, refresh interval, theme picker, °C/°F, B/s ↔ b/s, per-box show/hide, threshold alerts + browser notifications, and keyboard shortcuts (`p` pause, `+/−` interval, `f` filter).
+- **Toolbar** — pause, refresh interval, theme picker, °C/°F, B/s ↔ b/s, file-browser target, per-box show/hide, threshold alerts + browser notifications, and keyboard shortcuts (`p` pause, `+/−` interval, `f` filter).
 - **Fits the window** — the whole plugin fills the viewport; long columns and the process list scroll *inside* their box.
 - **Self-update** — one-click update from GitHub releases.
 
