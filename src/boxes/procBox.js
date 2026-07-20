@@ -4,6 +4,7 @@ import { humanize } from "../humanize.js";
 import { theme } from "../theme.js";
 import { BrailleGraph } from "../graph.js";
 import { RingBuffer } from "../ringbuffer.js";
+import { isKernelThread } from "../procparse.js";
 
 function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
 
@@ -192,12 +193,19 @@ export class ProcBox {
     const logBtn = this.popup.querySelector(".link-logs");
     svcBtn.addEventListener("click", () => { if (this._detailUnit) jump("/system/services#/" + this._detailUnit); });
     logBtn.addEventListener("click", () => { if (this._detailUnit) jump("/system/logs#/?prio=debug&_SYSTEMD_UNIT=" + encodeURIComponent(this._detailUnit)); });
-    this.popup.querySelector(".link-files").addEventListener("click", () => {
+    const filesBtn = this.popup.querySelector(".link-files");
+    // Kernel threads have no cmdline (ps shows it in [brackets]) and thus no cwd.
+    if (isKernelThread(p.command)) {
+      filesBtn.disabled = true;
+      filesBtn.title = "Kernel thread — no working directory";
+    }
+    filesBtn.addEventListener("click", () => {
+      if (filesBtn.disabled) return;
       if (!this.cwdOf) { msg("cwd unavailable"); return; }
       this.cwdOf(p.pid).then((cwd) => {
         if (this._selected !== p) return;
         if (cwd) jump("/files#" + cwd.split("/").map(encodeURIComponent).join("/"));
-        else msg("No working directory: kernel threads (kworker/…) have none, the process may have exited, or — without Administrative access — it belongs to another user.");
+        else msg("No working directory: the process may have exited, or — without Administrative access — it belongs to another user.");
       });
     });
     this.popup.querySelector(".renice-apply").addEventListener("click", () => {

@@ -178,6 +178,25 @@ check("popup opens with all actions", popup.visible && popup.links === 3 && popu
 await p.screenshot({ path: join(OUT, "t_popup.png"), fullPage: true });
 await f.evaluate(() => { const c = document.querySelector(".popup-close"); if (c) c.click(); });
 
+// ---------- Files-cwd button disabled for kernel threads ----------
+await f.fill(".proc-filter", "kworker");
+await sleep(600);
+let ktDisabled = null, regEnabled = null;
+if (await f.locator(".proc-table tbody tr").count()) {
+  await f.locator(".proc-table tbody tr").first().click();
+  await sleep(1000);
+  ktDisabled = await f.evaluate(() => !!document.querySelector(".link-files")?.disabled);
+  await f.evaluate(() => { const c = document.querySelector(".popup-close"); if (c) c.click(); });
+}
+await f.fill(".proc-filter", "");
+await sleep(500);
+// a real userspace process (top of the cpu-sorted list) should have it enabled
+await f.locator(".proc-table tbody tr").nth(1).click();
+await sleep(1000);
+regEnabled = await f.evaluate(() => document.querySelector(".link-files") && !document.querySelector(".link-files").disabled);
+await f.evaluate(() => { const c = document.querySelector(".popup-close"); if (c) c.click(); });
+check("Files-cwd disabled for kernel thread, enabled for real process", ktDisabled === true && regEnabled === true, `kthread=${ktDisabled} regular=${regEnabled}`);
+
 // ---------- keyboard: p toggles pause ----------
 const pauseLabelBefore = await f.evaluate(() => document.getElementById("tb-pause").textContent);
 await f.evaluate(() => document.body.focus());

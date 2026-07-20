@@ -1,3 +1,10 @@
+// A process with no command line — ps shows its name in [brackets], or it is
+// empty — has no working directory (kernel threads like kworker/…, zombies).
+export function isKernelThread(command) {
+  const c = String(command || "").trim();
+  return c === "" || (c.startsWith("[") && c.endsWith("]"));
+}
+
 export function parsePs(text) {
   const out = [];
   for (const raw of text.split("\n")) {
