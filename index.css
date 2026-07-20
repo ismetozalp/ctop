@@ -340,7 +340,7 @@ html, body { overflow-x: hidden; }
 #ctop-grid { flex:1 1 auto; min-height:0; overflow:hidden; grid-template-rows:auto auto minmax(0, 1fr) auto; }
 #slot-left { min-height:0; overflow-y:auto; overflow-x:hidden; padding-top:10px; }
 #slot-proc { min-height:0; overflow:hidden; }
-.proc-box { display:flex; flex-direction:column; max-height:100%; }
+.proc-box { display:flex; flex-direction:column; max-height:100%; margin:0; box-sizing:border-box; }
 .proc-scroll { flex:1 1 auto; min-height:0; overflow-y:auto; }
 /* Narrow screens: single column, let the page scroll normally (mobile). */
 @media (max-width: 900px) {
@@ -361,3 +361,19 @@ html, body { overflow-x: hidden; }
 .upd-head { display:flex; justify-content:space-between; align-items:center; padding:8px 12px; border-bottom:1px solid #303030; color:#eee; }
 .upd-close { background:none; border:none; color:#b54040; cursor:pointer; }
 .upd-log { margin:0; padding:10px 12px; overflow:auto; color:#ccc; white-space:pre-wrap; font-size:0.85em; }
+
+/* ---- theme-aware scrollbars ---- */
+.proc-scroll, #slot-left, .upd-log, .containers-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--th-dim, #606060) transparent;
+}
+.proc-scroll::-webkit-scrollbar, #slot-left::-webkit-scrollbar,
+.upd-log::-webkit-scrollbar, .containers-scroll::-webkit-scrollbar { width:10px; height:10px; }
+.proc-scroll::-webkit-scrollbar-track, #slot-left::-webkit-scrollbar-track,
+.upd-log::-webkit-scrollbar-track, .containers-scroll::-webkit-scrollbar-track { background:transparent; }
+.proc-scroll::-webkit-scrollbar-thumb, #slot-left::-webkit-scrollbar-thumb,
+.upd-log::-webkit-scrollbar-thumb, .containers-scroll::-webkit-scrollbar-thumb {
+  background: var(--th-dim, #606060); border-radius:5px; border:2px solid transparent; background-clip:content-box;
+}
+.proc-scroll::-webkit-scrollbar-thumb:hover, #slot-left::-webkit-scrollbar-thumb:hover,
+.upd-log::-webkit-scrollbar-thumb:hover, .containers-scroll::-webkit-scrollbar-thumb:hover { background: var(--th-fg, #ccc); background-clip:content-box; }
