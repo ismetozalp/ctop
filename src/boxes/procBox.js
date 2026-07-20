@@ -197,7 +197,7 @@ export class ProcBox {
       this.cwdOf(p.pid).then((cwd) => {
         if (this._selected !== p) return;
         if (cwd) jump("/files#" + cwd.split("/").map(encodeURIComponent).join("/"));
-        else msg("cwd not accessible");
+        else msg("cwd not accessible — turn on Administrative access for other users' processes (kernel threads have no cwd).");
       });
     });
     this.popup.querySelector(".renice-apply").addEventListener("click", () => {
