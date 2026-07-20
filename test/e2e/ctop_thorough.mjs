@@ -69,13 +69,16 @@ check("proc rows present", r0.procRows > 10, "rows=" + r0.procRows);
 check("theme list populated", r0.themes >= 40, "options=" + r0.themes);
 await p.screenshot({ path: join(OUT, "t_full.png"), fullPage: true });
 
-// ---------- proc-box fits window + scrolls internally ----------
+// ---------- plugin fits viewport; proc list scrolls internally ----------
 const scroll = await f.evaluate(() => {
   const sc = document.querySelector(".proc-scroll");
   const rect = sc.getBoundingClientRect();
-  return { maxH: sc.style.maxHeight, clientH: sc.clientHeight, scrollH: sc.scrollHeight, bottom: rect.bottom, vh: window.innerHeight, pageOverflowX: document.documentElement.scrollWidth - window.innerWidth };
+  const de = document.documentElement;
+  return { clientH: sc.clientHeight, scrollH: sc.scrollHeight, bottom: rect.bottom, vh: window.innerHeight,
+    pageOverflowX: de.scrollWidth - window.innerWidth, pageOverflowY: de.scrollHeight - window.innerHeight };
 });
-check("proc-scroll bounded to viewport", scroll.maxH && scroll.bottom <= scroll.vh + 2, `bottom=${Math.round(scroll.bottom)} vh=${scroll.vh} maxH=${scroll.maxH}`);
+check("plugin fits viewport (no page scroll)", scroll.pageOverflowY <= 2, "overflowY=" + scroll.pageOverflowY);
+check("proc box within viewport", scroll.bottom <= scroll.vh + 2, `bottom=${Math.round(scroll.bottom)} vh=${scroll.vh}`);
 check("proc list scrolls inside box", scroll.scrollH > scroll.clientH + 4, `scrollH=${scroll.scrollH} clientH=${scroll.clientH}`);
 check("no page horizontal overflow", scroll.pageOverflowX <= 2, "overflowX=" + scroll.pageOverflowX);
 
