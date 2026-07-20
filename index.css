@@ -347,3 +347,14 @@ html, body { overflow-x: hidden; }
   #slot-proc { overflow:visible; }
   .proc-box { max-height:none; }
 }
+
+/* ---- self-update badge + install overlay ---- */
+#tb-update { cursor:pointer; color:#888; font-size:0.85em; padding:2px 6px; border-radius:4px; white-space:nowrap; }
+#tb-update:hover { color:#ccc; }
+#tb-update.upd-has { background:#4b6c6c; color:#fff; font-weight:bold; }
+#ctop-update-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; z-index:100; }
+#ctop-update-overlay.hidden { display:none; }
+.upd-panel { width:min(680px, 90vw); max-height:80vh; display:flex; flex-direction:column; background:#111; border:1px solid #4b6c6c; border-radius:8px; overflow:hidden; }
+.upd-head { display:flex; justify-content:space-between; align-items:center; padding:8px 12px; border-bottom:1px solid #303030; color:#eee; }
+.upd-close { background:none; border:none; color:#b54040; cursor:pointer; }
+.upd-log { margin:0; padding:10px 12px; overflow:auto; color:#ccc; white-space:pre-wrap; font-size:0.85em; }

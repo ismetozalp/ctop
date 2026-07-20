@@ -9,6 +9,7 @@ import { GpuBox } from "./boxes/gpuBox.js";
 import { BatteryBox } from "./boxes/batteryBox.js";
 import { theme } from "./theme.js";
 import { settings } from "./settings.js";
+import { Updater } from "./update.js";
 // Tier-2/3 boxes are wired in by the integration step:
 import { ContainersBox } from "./boxes/containersBox.js";
 import { SensorsBox } from "./boxes/sensorsBox.js";
@@ -30,10 +31,17 @@ root.innerHTML = `
       <button id="tb-boxes">boxes ▾</button>
       <div id="tb-boxes-menu" class="hidden"></div>
     </div>
+    <span id="tb-update" title="Check for updates"></span>
     <span id="tb-spacer"></span>
     <span id="tb-hint">keys: p pause · +/− interval · f filter</span>
   </div>
   <div id="ctop-banner" class="hidden"></div>
+  <div id="ctop-update-overlay" class="hidden">
+    <div class="upd-panel">
+      <div class="upd-head"><span class="upd-title"></span><button class="upd-close">✕</button></div>
+      <pre class="upd-log"></pre>
+    </div>
+  </div>
   <div id="ctop-grid">
     <div id="slot-cpu" class="col-full"></div>
     <div id="slot-gpu"></div>
@@ -213,6 +221,49 @@ for (const name of Object.keys(SLOTS)) {
   boxesMenu.appendChild(row);
 }
 applyBoxVisibility();
+
+// ---- self-update (GitHub releases) -----------------------------------------
+const updater = new Updater({ repo: settings.get("updateRepo") });
+const updEl = document.getElementById("tb-update");
+const updOverlay = document.getElementById("ctop-update-overlay");
+function updBadge(text, cls, onclick, title) {
+  updEl.className = cls || ""; updEl.textContent = text; updEl.onclick = onclick || null;
+  if (title) updEl.title = title;
+}
+updater.loadCurrentVersion()
+  .then((v) => updBadge(v ? "v" + v : "", "", () => checkUpdate(true), "Click to check for updates"))
+  .catch(() => {});
+
+function checkUpdate(manual) {
+  if (!updater.repo) return;
+  updBadge("checking…", "", null);
+  updater.check().then((res) => {
+    if (res.available) {
+      updBadge("⬆ update to v" + res.latest.version, "upd-has", () => startUpdate(res.latest),
+        "v" + res.latest.version + " available — click to install");
+    } else {
+      const back = () => updBadge("v" + (res.current || "?"), "", () => checkUpdate(true), "Up to date — click to re-check");
+      updBadge("v" + (res.current || "?") + (manual ? " ✓" : ""), "", () => checkUpdate(true), "Up to date — click to re-check");
+      if (manual) setTimeout(back, 2000);
+    }
+  }).catch((e) => updBadge("v" + (updater.current || "?"), "", () => checkUpdate(true), "Update check failed: " + (e.message || e)));
+}
+
+function startUpdate(latest) {
+  if (!window.confirm("Update Cockpit Top to v" + latest.version + "?\n\nDownloads the release from " + updater.repo +
+    ", installs it (requires admin), and restarts Cockpit.")) return;
+  const log = updOverlay.querySelector(".upd-log");
+  updOverlay.querySelector(".upd-title").textContent = "Updating to v" + latest.version + "…";
+  log.textContent = "";
+  updOverlay.classList.remove("hidden");
+  const append = (t) => { log.textContent += t; log.scrollTop = log.scrollHeight; };
+  updater.installStream(latest, append, (opts) => {
+    if (opts && opts.problem) append("\n✗ Failed: " + (opts.message || opts.problem) + "\n");
+    else { append("\n✓ Installed. Cockpit is restarting — reloading shortly…\n"); setTimeout(() => location.reload(), 7000); }
+  });
+}
+updOverlay.querySelector(".upd-close").addEventListener("click", () => updOverlay.classList.add("hidden"));
+if (settings.get("updateCheckOnStart") && updater.repo) setTimeout(() => checkUpdate(false), 4000);
 
 // ---- keyboard shortcuts ----------------------------------------------------
 window.addEventListener("keydown", (e) => {
