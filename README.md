@@ -93,6 +93,11 @@ make test-e2e-smoke # quick e2e
 
 The e2e reads Cockpit credentials from `~/.config/claude/ctop-e2e/creds` (two lines: user, password), kept outside the repo. See `test/e2e/README.md`.
 
+## More Cockpit plugins
+
+- **[Explorer](https://github.com/ismetozalp/explorer)** — a full file manager for the Cockpit web console: browse/edit files, integrated terminal, git, and more. (Cockpit Top can deep-link a process's cwd straight into it.)
+- **[IF TV](https://github.com/ismetozalp/iftv)** — turns the Cockpit web console into a full IPTV client: live TV, movies, series, an EPG guide, and host-side transcoding.
+
 ## License
 
 [Apache-2.0](LICENSE) © 2026 ismetozalp
