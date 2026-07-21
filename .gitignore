@@ -4,3 +4,4 @@ dist/
 *.log
 test/e2e/out/
 docs/superpowers/
+ctop-*.zip
