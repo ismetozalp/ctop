@@ -15,12 +15,20 @@ const HOST_CORES = cpus().length;
 let THEME_FILES = 0;
 try { THEME_FILES = readdirSync("/usr/share/btop/themes").filter((f) => f.endsWith(".theme")).length; } catch { /* none installed */ }
 const PCP_ACTIVE = run("systemctl", ["is-active", "pmlogger"]) === "active";
-// Running containers per engine — the merged box must show every one of these.
-const engineNames = (cmd) => run(cmd, ["ps", "--format", "{{.Names}}"]).split("\n").map((s) => s.trim()).filter(Boolean);
-const PODMAN_NAMES = engineNames("podman");
-const DOCKER_NAMES = engineNames("docker");
-const ALL_NAMES = [...PODMAN_NAMES, ...DOCKER_NAMES];
-const BOTH_ENGINES = PODMAN_NAMES.length > 0 && DOCKER_NAMES.length > 0;
+// Running containers per engine (id + name). The box de-dups by container ID,
+// so the podman-docker shim (docker == podman -> identical IDs) must NOT
+// double-list containers or show the engine column.
+const engineList = (cmd) => run(cmd, ["ps", "--format", "{{.ID}}\t{{.Names}}"]).split("\n").map((s) => s.trim()).filter(Boolean)
+  .map((l) => { const i = l.indexOf("\t"); return { id: l.slice(0, i), name: l.slice(i + 1) }; });
+const PODMAN = engineList("podman");
+const DOCKER = engineList("docker");
+const podmanIds = new Set(PODMAN.map((c) => c.id));
+const dockerIds = new Set(DOCKER.map((c) => c.id));
+const byId = new Map(); [...PODMAN, ...DOCKER].forEach((c) => { if (!byId.has(c.id)) byId.set(c.id, c.name); });
+const ALL_NAMES = [...byId.values()];                       // unique containers after dedup
+// Genuinely two engines only if each has a container the other lacks (not the shim).
+const BOTH_ENGINES = podmanIds.size > 0 && dockerIds.size > 0
+  && [...dockerIds].some((id) => !podmanIds.has(id)) && [...podmanIds].some((id) => !dockerIds.has(id));
 let HOST_LOOPS = 0;
 try { HOST_LOOPS = readdirSync("/sys/block").filter((n) => /^loop\d+$/.test(n)).length; } catch { /* none */ }
 
@@ -87,6 +95,8 @@ if (ALL_NAMES.length) {
   check("containers rendered", r0.containers > 0, "rows=" + r0.containers);
   check("every running container listed", ALL_NAMES.every((n) => r0.containerNames.includes(n)),
     `host=[${ALL_NAMES}] shown=[${r0.containerNames}]`);
+  check("no duplicate container rows (shim de-dup)", r0.containers === ALL_NAMES.length,
+    `rows=${r0.containers} unique=${ALL_NAMES.length} shown=[${r0.containerNames}]`);
   check("engine column only when both engines run", r0.engineColShown === BOTH_ENGINES,
     `shown=${r0.engineColShown} bothEngines=${BOTH_ENGINES} engines=[${r0.containerEngines}]`);
 } else {
