@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 const CORE = {
   "gradient.js": "buildGradient", "humanize.js": "humanize", "ringbuffer.js": "RingBuffer",
   "graph.js": "quantize", "meter.js": "Meter", "netscale.js": "NetScaler",
-  "decompress.js": "Decompressor", "procparse.js": "parsePs", "sort.js": "sortProcs",
+  "decompress.js": "Decompressor", "procparse.js": "parsePs", "sort.js": "sortProcs", "containers.js": "parseStats",
   "theme.js": "theme", "settings.js": "settings", "metrics.js": "Metrics", "processes.js": "Processes",
 };
 for (const [file, exp] of Object.entries(CORE)) {

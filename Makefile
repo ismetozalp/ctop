@@ -39,7 +39,7 @@ version:
 	@echo $(VERSION)
 
 test:
-	node --test
+	node --test test/*.test.js
 
 # Thorough browser e2e. Requires: a Chrome/Chromium binary, a creds file
 # ($(CTOP_E2E_CREDS), two lines user/pass; see test/e2e/README.md), and ctop

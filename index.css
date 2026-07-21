@@ -276,6 +276,12 @@ html, body { overflow-x: hidden; }
 .containers-box .containers-table tr:hover td {
   background: rgba(255, 255, 255, 0.04);
 }
+
+/* Engine column — shown only when podman AND docker both have containers */
+.containers-box .containers-table td.cengine {
+  color: var(--th-dim, #808080);
+  font-size: 0.9em;
+}
 /* sensorsBox */
 /* src/boxes/sensorsBox.extra.css */
 .sensors-box { --box:#8d5c58; }

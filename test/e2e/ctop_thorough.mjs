@@ -2,11 +2,25 @@
 // its controls and asserts behavior. Prints a PASS/FAIL summary; exits nonzero
 // if any check fails. Screenshots -> ./out/.  See README.md for setup.
 import pkg from "playwright-core";
-import { readFileSync, mkdirSync } from "node:fs";
-import { homedir } from "node:os";
+import { readFileSync, mkdirSync, readdirSync } from "node:fs";
+import { homedir, cpus } from "node:os";
+import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 const { chromium } = pkg;
+
+// ---------- host-derived expectations (the harness runs on the target host) --
+function run(cmd, args) { try { return execFileSync(cmd, args, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim(); } catch { return ""; } }
+const HOST_CORES = cpus().length;
+let THEME_FILES = 0;
+try { THEME_FILES = readdirSync("/usr/share/btop/themes").filter((f) => f.endsWith(".theme")).length; } catch { /* none installed */ }
+const PCP_ACTIVE = run("systemctl", ["is-active", "pmlogger"]) === "active";
+// Running containers per engine — the merged box must show every one of these.
+const engineNames = (cmd) => run(cmd, ["ps", "--format", "{{.Names}}"]).split("\n").map((s) => s.trim()).filter(Boolean);
+const PODMAN_NAMES = engineNames("podman");
+const DOCKER_NAMES = engineNames("docker");
+const ALL_NAMES = [...PODMAN_NAMES, ...DOCKER_NAMES];
+const BOTH_ENGINES = PODMAN_NAMES.length > 0 && DOCKER_NAMES.length > 0;
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const OUT = join(HERE, "out"); mkdirSync(OUT, { recursive: true });
@@ -52,21 +66,33 @@ const r0 = await f.evaluate(() => {
     gpuName: (document.querySelector(".gpu-name") || {}).textContent || "",
     sensors: q(".sensors-row").length,
     containers: q(".containers-box tbody tr").length,
+    containerNames: q(".containers-box td.cname").map((e) => e.textContent.trim()),
+    containerEngines: q(".containers-box td.cengine").map((e) => e.textContent.trim()),
+    engineColShown: (() => { const th = document.querySelector(".containers-box .cengine-th"); return !!th && getComputedStyle(th).display !== "none"; })(),
     history: (document.querySelector(".history-status") || {}).textContent || "",
     procRows: q(".proc-table tbody tr").length,
     themes: q("#tb-theme option").length,
   };
 });
 check("all boxes present", ["cpu", "gpu", "mem", "proc"].every((n) => r0.boxes.some((b) => b.startsWith(n))), r0.boxes.join(","));
-check("8 per-core entries", r0.cores === 8, "cores=" + r0.cores);
-check("cpu model shown", /i7-7700HQ|Intel|AMD|CPU/i.test(r0.cpuModel), r0.cpuModel);
+check("per-core entries match host", r0.cores === HOST_CORES, `cores=${r0.cores} host=${HOST_CORES}`);
+check("cpu model shown", /Intel|AMD|CPU|Ryzen/i.test(r0.cpuModel), r0.cpuModel);
 check("mounts rendered", r0.mounts > 0, "mounts=" + r0.mounts);
 check("gpu detected", /NVIDIA|GeForce/.test(r0.gpuName), r0.gpuName);
 check("sensors rendered", r0.sensors > 0, "rows=" + r0.sensors);
-check("containers rendered", r0.containers > 0, "rows=" + r0.containers);
-check("history connected (no fallback)", r0.history === "", r0.history || "(empty=connected)");
+if (ALL_NAMES.length) {
+  check("containers rendered", r0.containers > 0, "rows=" + r0.containers);
+  check("every running container listed", ALL_NAMES.every((n) => r0.containerNames.includes(n)),
+    `host=[${ALL_NAMES}] shown=[${r0.containerNames}]`);
+  check("engine column only when both engines run", r0.engineColShown === BOTH_ENGINES,
+    `shown=${r0.engineColShown} bothEngines=${BOTH_ENGINES} engines=[${r0.containerEngines}]`);
+} else {
+  check("containers box hidden (no containers running)", r0.containers === 0, "rows=" + r0.containers);
+}
+if (PCP_ACTIVE) check("history connected (no fallback)", r0.history === "", r0.history || "(empty=connected)");
+else check("history shows unavailable fallback (pmlogger inactive)", r0.history !== "", r0.history || "(empty)");
 check("proc rows present", r0.procRows > 10, "rows=" + r0.procRows);
-check("theme list populated", r0.themes >= 40, "options=" + r0.themes);
+check("theme list matches installed btop themes", r0.themes === THEME_FILES + 1, `options=${r0.themes} themes=${THEME_FILES}+Default`);
 await p.screenshot({ path: join(OUT, "t_full.png"), fullPage: true });
 
 // ---------- plugin fits viewport; proc list scrolls internally ----------

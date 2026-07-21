@@ -16,7 +16,7 @@ A **[btop](https://github.com/aristocratos/btop)-style system monitor as a nativ
 - **Network** — auto-scaling up/down braille graphs, current rate plus peak (Top) and cumulative (Total).
 - **GPU** — NVIDIA util + VRAM + temperature + power (via `nvidia-smi`), hidden when absent.
 - **Sensors** — every hwmon temperature and **fan RPM** beyond the CPU package.
-- **Containers** — live `podman` container CPU / memory / net I/O.
+- **Containers** — live `podman` **and `docker`** container CPU / memory / net I/O, merged into one table (an engine column appears when both are running containers).
 - **Processes** — sortable table (kill / TERM / signal, **renice**), filter/search, **tree** view, a per-PID CPU sparkline, open sockets, and **deep-links** to the process's systemd **Service**, its **Logs**, and its working directory in a **file browser** — Cockpit Files or the [Explorer](https://github.com/ismetozalp/explorer) plugin, auto-detected (the button hides if neither is installed).
 - **History** — back-in-time CPU history from the PCP archive (optional; enable via *boxes ▾*).
 - **Themes** — loads any of btop's `.theme` files installed on the host and recolors live.
@@ -73,7 +73,7 @@ Optional integrations that light up automatically when present:
 | Box / feature | Needs |
 |---|---|
 | GPU | `nvidia-smi` |
-| Containers | `podman` |
+| Containers | `podman` and/or `docker` (docker rows use the session user's socket access, else Cockpit admin privilege) |
 | History | an active `pmlogger` + Cockpit's PCP support (bundled in `cockpit-bridge` on RHEL/Fedora; `cockpit-pcp` on some distros) |
 | Sensors / battery | hwmon sensors under `/sys/class/hwmon`, `/sys/class/power_supply` |
 | Themes | btop `.theme` files under `/usr/share/btop/themes` |
