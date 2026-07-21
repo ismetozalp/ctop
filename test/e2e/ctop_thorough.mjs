@@ -21,6 +21,8 @@ const PODMAN_NAMES = engineNames("podman");
 const DOCKER_NAMES = engineNames("docker");
 const ALL_NAMES = [...PODMAN_NAMES, ...DOCKER_NAMES];
 const BOTH_ENGINES = PODMAN_NAMES.length > 0 && DOCKER_NAMES.length > 0;
+let HOST_LOOPS = 0;
+try { HOST_LOOPS = readdirSync("/sys/block").filter((n) => /^loop\d+$/.test(n)).length; } catch { /* none */ }
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const OUT = join(HERE, "out"); mkdirSync(OUT, { recursive: true });
@@ -63,6 +65,7 @@ const r0 = await f.evaluate(() => {
     cores: q(".cpu-cores .core-pct").length,
     cpuModel: (document.querySelector(".cpu-model") || {}).textContent || "",
     mounts: q(".mem-mount").length,
+    diskLabels: q(".mem-disk .disk-label").map((e) => e.textContent.trim()),
     gpuName: (document.querySelector(".gpu-name") || {}).textContent || "",
     sensors: q(".sensors-row").length,
     containers: q(".containers-box tbody tr").length,
@@ -139,6 +142,21 @@ const tempF = await f.evaluate(() => (document.querySelector(".cpu-temp") || {})
 check("temp toggles to Fahrenheit", tempF.includes("°F") && !tempF.includes("°C"), `${tempC} -> ${tempF}`);
 await f.selectOption("#tb-temp", "C");
 await sleep(1500);
+
+// ---------- loop devices hidden by default; "loops" toggle shows them ----------
+check("loop devices hidden by default", !r0.diskLabels.some((d) => /^loop\d+$/.test(d)),
+  `disks=[${r0.diskLabels}]`);
+if (HOST_LOOPS > 0) {
+  await f.click("#tb-loops");
+  await sleep(2500);
+  const withLoops = await f.evaluate(() => Array.from(document.querySelectorAll(".mem-disk .disk-label")).map((e) => e.textContent.trim()));
+  check("loops toggle shows loop devices", withLoops.some((d) => /^loop\d+$/.test(d)),
+    `host has ${HOST_LOOPS} loops; disks=[${withLoops.slice(0, 8)}…]`);
+  await f.click("#tb-loops");
+  await sleep(2500);
+  const backOff = await f.evaluate(() => Array.from(document.querySelectorAll(".mem-disk .disk-label")).map((e) => e.textContent.trim()));
+  check("loops toggle off hides them again", !backOff.some((d) => /^loop\d+$/.test(d)), `disks=[${backOff}]`);
+}
 
 // ---------- network byte -> bit ----------
 const netByte = await f.evaluate(() => (document.querySelector(".net-rx-val") || {}).textContent || "");

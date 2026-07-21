@@ -27,6 +27,7 @@ root.innerHTML = `
     <label>theme <select id="tb-theme"></select></label>
     <label>temp <select id="tb-temp"><option value="C">°C</option><option value="F">°F</option></select></label>
     <label>net <select id="tb-netunit"><option value="byte">B/s</option><option value="bit">b/s</option></select></label>
+    <label title="Show loop devices (snap images etc.) in the mem box disk I/O list"><input type="checkbox" id="tb-loops"> loops</label>
     <label>open <select id="tb-filebrowser"><option value="files">Files</option><option value="explorer">Explorer</option></select></label>
     <label><input type="checkbox" id="tb-notify"> notify</label>
     <div id="tb-boxes-wrap">
@@ -175,6 +176,9 @@ tempSel.addEventListener("change", () => { settings.set("tempScale", tempSel.val
 const netUnitSel = document.getElementById("tb-netunit");
 netUnitSel.value = settings.get("netBits") ? "bit" : "byte";
 netUnitSel.addEventListener("change", () => { settings.set("netBits", netUnitSel.value === "bit"); if (latest) render(); });
+const loopsChk = document.getElementById("tb-loops");
+loopsChk.checked = !!settings.get("showLoops");
+loopsChk.addEventListener("change", () => { settings.set("showLoops", loopsChk.checked); if (latest) render(); });
 
 const fbSel = document.getElementById("tb-filebrowser");
 const fbLabel = fbSel.closest("label");

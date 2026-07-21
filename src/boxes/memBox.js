@@ -3,6 +3,13 @@ import { Meter } from "../meter.js";
 import { BrailleGraph } from "../graph.js";
 import { theme } from "../theme.js";
 import { humanize } from "../humanize.js";
+import { settings } from "../settings.js";
+
+// Disk devices to render: loopN devices (snap squashfs images etc.) are noise
+// on most hosts, so they're hidden unless the "loops" toolbar toggle is on.
+export function visibleDisks(devs, showLoops) {
+  return showLoops ? devs : devs.filter((d) => !/^loop\d+$/.test(d));
+}
 
 export class MemBox {
   constructor(root) { this.root = root; }
@@ -75,7 +82,7 @@ export class MemBox {
       this._mountRows[p].meter.render(pct);
       this._mountRows[p].val.textContent = `${humanize(used)}/${humanize(total)} ${pct.toFixed(0)}%`;
     }
-    const devs = Object.keys(m.disks);
+    const devs = visibleDisks(Object.keys(m.disks), settings.get("showLoops"));
     this._ensureDisks(devs);
     for (const d of devs) {
       const rd = m.disks[d].read.toArray(), wr = m.disks[d].write.toArray();

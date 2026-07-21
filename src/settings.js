@@ -7,6 +7,7 @@ const DEFAULTS = {
   theme: "Default",    // "Default" or a btop theme name
   tempScale: "C",      // "C" | "F"
   netBits: false,      // false = bytes/s, true = bits/s
+  showLoops: false,    // show loopN devices (snap images etc.) in the mem box disk I/O list
   notify: false,       // browser notifications on threshold breach
   fileBrowser: "files", // "files" (Cockpit Files) or "explorer"
   updateRepo: "ismetozalp/ctop", // GitHub owner/repo checked for self-update

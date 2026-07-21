@@ -12,7 +12,7 @@ A **[btop](https://github.com/aristocratos/btop)-style system monitor as a nativ
 ## Features
 
 - **CPU** — per-core braille mini-graphs, per-core temps, package temp, frequency, load average, uptime, clock, and the CPU model. A full-width gradient braille graph like btop.
-- **Memory** — used / cached / available / free + swap meters, per-mount usage bars, and per-disk read/write I/O graphs.
+- **Memory** — used / cached / available / free + swap meters, per-mount usage bars, and per-disk read/write I/O graphs (`loopN` devices — snap images etc. — are hidden by default; *loops* toolbar toggle shows them).
 - **Network** — auto-scaling up/down braille graphs, current rate plus peak (Top) and cumulative (Total).
 - **GPU** — NVIDIA util + VRAM + temperature + power (via `nvidia-smi`), hidden when absent.
 - **Sensors** — every hwmon temperature and **fan RPM** beyond the CPU package.
@@ -20,7 +20,7 @@ A **[btop](https://github.com/aristocratos/btop)-style system monitor as a nativ
 - **Processes** — sortable table (kill / TERM / signal, **renice**), filter/search, **tree** view, a per-PID CPU sparkline, open sockets, and **deep-links** to the process's systemd **Service**, its **Logs**, and its working directory in a **file browser** — Cockpit Files or the [Explorer](https://github.com/ismetozalp/explorer) plugin, auto-detected (the button hides if neither is installed).
 - **History** — back-in-time CPU history from the PCP archive (optional; enable via *boxes ▾*).
 - **Themes** — loads any of btop's `.theme` files installed on the host and recolors live.
-- **Toolbar** — pause, refresh interval, theme picker, °C/°F, B/s ↔ b/s, file-browser target, per-box show/hide, threshold alerts + browser notifications, and keyboard shortcuts (`p` pause, `+/−` interval, `f` filter).
+- **Toolbar** — pause, refresh interval, theme picker, °C/°F, B/s ↔ b/s, loop-device show/hide, file-browser target, per-box show/hide, threshold alerts + browser notifications, and keyboard shortcuts (`p` pause, `+/−` interval, `f` filter).
 - **Fits the window** — the whole plugin fills the viewport; long columns and the process list scroll *inside* their box.
 - **Self-update** — one-click update from GitHub releases.
 
