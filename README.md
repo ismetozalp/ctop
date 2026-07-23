@@ -8,6 +8,7 @@ A **[btop](https://github.com/aristocratos/btop)-style system monitor as a nativ
 
 - **[Explorer](https://github.com/ismetozalp/explorer)** — a full file manager for the Cockpit web console: browse/edit files, integrated terminal, git, and more. (Cockpit Top can deep-link a process's cwd straight into it.)
 - **[IF TV](https://github.com/ismetozalp/iftv)** — turns the Cockpit web console into a full IPTV client: live TV, movies, series, an EPG guide, and host-side transcoding.
+- **[Manifest](https://github.com/ismetozalp/manifest)** — a download manager for the Cockpit web console: torrents, magnets, and HTTP/FTP/Metalink files via a per-user `aria2c` daemon.
 
 ## Features
 
