@@ -83,8 +83,27 @@ const r0 = await f.evaluate(() => {
     history: (document.querySelector(".history-status") || {}).textContent || "",
     procRows: q(".proc-table tbody tr").length,
     themes: q("#tb-theme option").length,
+    // Each visible box must actually draw all four borders: a real style
+    // (not `none`), non-zero width, and one opaque color on every side. An
+    // undefined `var(--box)` invalidates the `border` shorthand and resets
+    // border-style to `none`, so a colour-only check would miss it.
+    borderlessBoxes: q(".box").filter((el) => getComputedStyle(el).display !== "none").map((el) => {
+      const cs = getComputedStyle(el);
+      const colors = [cs.borderTopColor, cs.borderRightColor, cs.borderBottomColor, cs.borderLeftColor];
+      const styles = [cs.borderTopStyle, cs.borderRightStyle, cs.borderBottomStyle, cs.borderLeftStyle];
+      const widths = [cs.borderTopWidth, cs.borderRightWidth, cs.borderBottomWidth, cs.borderLeftWidth];
+      const title = ((el.querySelector(".box-title") || {}).textContent || "box").trim();
+      const bad =
+        styles.some((s) => s !== styles[0] || s === "none") ||
+        widths.some((w) => parseFloat(w) <= 0) ||
+        colors.some((c) => c !== colors[0]) ||
+        /transparent|rgba\(0, 0, 0, 0\)/.test(colors[0]);
+      return bad ? title : null;
+    }).filter(Boolean),
   };
 });
+check("every box has all four borders", r0.borderlessBoxes.length === 0,
+  r0.borderlessBoxes.length ? "missing: " + r0.borderlessBoxes.join(",") : "all bordered");
 check("all boxes present", ["cpu", "gpu", "mem", "proc"].every((n) => r0.boxes.some((b) => b.startsWith(n))), r0.boxes.join(","));
 check("per-core entries match host", r0.cores === HOST_CORES, `cores=${r0.cores} host=${HOST_CORES}`);
 check("cpu model shown", /Intel|AMD|CPU|Ryzen/i.test(r0.cpuModel), r0.cpuModel);

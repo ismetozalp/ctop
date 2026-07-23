@@ -161,6 +161,7 @@ html, body { margin:0; height:100%; background:var(--th-bg, var(--bg)); color:va
 /* batteryBox */
 /* src/boxes/batteryBox.extra.css */
 .bat-box {
+  --box: #5c8d6c;
   display: flex;
   flex-direction: column;
 }
