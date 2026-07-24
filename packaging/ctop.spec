@@ -1,5 +1,5 @@
 Name:           cockpit-ctop
-Version:        1.1.3
+Version:        1.1.4
 Release:        1%{?dist}
 Summary:        btop-style system monitor for Cockpit
 License:        Apache-2.0
@@ -23,6 +23,9 @@ cp -r %{_sourcedir}/ctop/manifest.json %{_sourcedir}/ctop/index.html \
 %{_datadir}/cockpit/ctop
 
 %changelog
+* Sat Jul 25 2026 ismetozalp <ismetozalp@users.noreply.github.com> - 1.1.4-1
+- Align the middle-row columns: the left box stack now starts flush with the proc box (was 16px lower), and its last visible box grows so its bottom is flush with the proc box bottom when the stack fits
+
 * Fri Jul 24 2026 ismetozalp <ismetozalp@users.noreply.github.com> - 1.1.3-1
 - Fix the disk-I/O device label wrapping vertically (one character per line) in a narrow mem box
 - Show the containers box (empty) whenever podman or docker is installed, even with no containers running

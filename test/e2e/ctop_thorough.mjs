@@ -88,6 +88,23 @@ const r0 = await f.evaluate(() => {
     history: (document.querySelector(".history-status") || {}).textContent || "",
     procRows: q(".proc-table tbody tr").length,
     themes: q("#tb-theme option").length,
+    // Middle-row column alignment: the left box stack and the proc box start on
+    // the same line (topGap≈0). When the stack fits the column (not scrolling),
+    // its last box grows so its bottom is flush with the proc box (bottomGap≈0).
+    align: (() => {
+      const memBox = document.querySelector("#slot-left .mem-box");
+      const procBox = document.querySelector("#slot-proc .proc-box");
+      const slotLeft = document.querySelector("#slot-left");
+      const boxes = Array.from(document.querySelectorAll("#slot-left .box"));
+      const last = boxes[boxes.length - 1];
+      if (!memBox || !procBox || !slotLeft || !last) return null;
+      const r = (el) => el.getBoundingClientRect();
+      return {
+        topGap: Math.round(r(memBox).top - r(procBox).top),
+        bottomGap: Math.round(r(procBox).bottom - r(last).bottom),
+        scrolls: slotLeft.scrollHeight > slotLeft.clientHeight + 1,
+      };
+    })(),
     // Each visible box must actually draw all four borders: a real style
     // (not `none`), non-zero width, and one opaque color on every side. An
     // undefined `var(--box)` invalidates the `border` shorthand and resets
@@ -109,6 +126,13 @@ const r0 = await f.evaluate(() => {
 });
 check("every box has all four borders", r0.borderlessBoxes.length === 0,
   r0.borderlessBoxes.length ? "missing: " + r0.borderlessBoxes.join(",") : "all bordered");
+check("middle columns align at the top (left stack starts with proc box)",
+  !!r0.align && Math.abs(r0.align.topGap) <= 2,
+  r0.align ? `topGap=${r0.align.topGap}px` : "no align data");
+// Bottom-flush only holds when the stack fits; a short window legitimately scrolls.
+check("left stack bottom is flush with proc when it fits",
+  !!r0.align && (r0.align.scrolls || Math.abs(r0.align.bottomGap) <= 2),
+  r0.align ? `bottomGap=${r0.align.bottomGap}px scrolls=${r0.align.scrolls}` : "no align data");
 check("all boxes present", ["cpu", "gpu", "mem", "proc"].every((n) => r0.boxes.some((b) => b.startsWith(n))), r0.boxes.join(","));
 check("per-core entries match host", r0.cores === HOST_CORES, `cores=${r0.cores} host=${HOST_CORES}`);
 check("cpu model shown", /Intel|AMD|CPU|Ryzen/i.test(r0.cpuModel), r0.cpuModel);
@@ -307,6 +331,24 @@ check("no h-overflow when narrow", narrow.overflowX <= 2, "overflowX=" + narrow.
 check("disk labels stay on one line when narrow", narrow.wrapped.length === 0,
   narrow.wrapped.length ? "wrapped: " + narrow.wrapped.join(",") : `ok (${narrow.diskCount} disks)`);
 await p.screenshot({ path: join(OUT, "t_narrow.png"), fullPage: true });
+
+// ---------- resize: tall window so the left stack fits, then it must be flush -
+await p.setViewportSize({ width: 1600, height: 1500 });
+await sleep(1800);
+const tall = await f.evaluate(() => {
+  const sl = document.querySelector("#slot-left");
+  const procBox = document.querySelector("#slot-proc .proc-box");
+  const boxes = Array.from(document.querySelectorAll("#slot-left .box"));
+  const last = boxes[boxes.length - 1];
+  if (!sl || !procBox || !last) return null;
+  return {
+    scrolls: sl.scrollHeight > sl.clientHeight + 1,
+    bottomGap: Math.round(procBox.getBoundingClientRect().bottom - last.getBoundingClientRect().bottom),
+  };
+});
+check("left stack grows flush to proc bottom in a tall window",
+  !!tall && !tall.scrolls && Math.abs(tall.bottomGap) <= 2,
+  tall ? `bottomGap=${tall.bottomGap}px scrolls=${tall.scrolls}` : "no data");
 await p.setViewportSize({ width: 1600, height: 1000 });
 
 // ---------- error tallies ----------

@@ -234,6 +234,29 @@ function applyBoxVisibility() {
     // reassign their own root.style.display, which an !important class overrides.
     if (el) el.classList.toggle("ctop-hidden", b[name] === false);
   }
+  updateLeftFill();
+}
+
+// Mark the last *visible* box in the left column so it grows to fill the
+// leftover height, aligning its bottom with the proc box. Which box is last
+// varies: battery/containers hide themselves, and the boxes menu hides any.
+const slotLeftEl = document.getElementById("slot-left");
+function updateLeftFill() {
+  if (!slotLeftEl) return;
+  const kids = Array.from(slotLeftEl.children);
+  let last = null;
+  for (const el of kids) if (el.offsetHeight > 0) last = el; // offsetHeight 0 => hidden
+  for (const el of kids) el.classList.toggle("grow-fill", el === last);
+}
+// Recompute the filler whenever a left-column box changes size — which covers a
+// box appearing/disappearing (battery, containers self-hide; the boxes menu
+// hides any) and the grown box settling. A ResizeObserver is reliable here where
+// a style MutationObserver is not: boxes reveal themselves with style.display=""
+// (an empty string, i.e. no attribute mutation to observe). It also fires once
+// after first layout, so the initial (pre-layout, all-zero-height) call settles.
+if (slotLeftEl && typeof ResizeObserver !== "undefined") {
+  const ro = new ResizeObserver(() => updateLeftFill());
+  for (const child of slotLeftEl.children) ro.observe(child);
 }
 const boxesBtn = document.getElementById("tb-boxes");
 const boxesMenu = document.getElementById("tb-boxes-menu");

@@ -351,8 +351,20 @@ html, body { overflow-x: hidden; }
 #ctop-root { height:100vh; box-sizing:border-box; padding:8px; overflow:hidden; display:flex; flex-direction:column; }
 #ctop-toolbar, #ctop-banner { flex:0 0 auto; }
 #ctop-grid { flex:1 1 auto; min-height:0; overflow:hidden; grid-template-rows:auto auto minmax(0, 1fr) auto; }
-#slot-left { min-height:0; overflow-y:auto; overflow-x:hidden; padding-top:10px; }
+#slot-left { min-height:0; overflow-y:auto; overflow-x:hidden; padding-top:0; display:flex; flex-direction:column; gap:6px; }
 #slot-proc { min-height:0; overflow:hidden; }
+/* The left column is a flex stack; its boxes start flush at the slot top so the
+   left stack and the proc box begin on the same line. Flex doesn't collapse
+   margins, so spacing comes from the container `gap` and the boxes drop their
+   own vertical margins (keeping margin:6px would double every gap and overflow
+   the column). */
+#slot-left > div { flex:0 0 auto; }
+#slot-left > div > .box { margin-top:0; margin-bottom:0; }
+/* The last *visible* box (marked by JS) grows to fill leftover space so its
+   bottom border meets the proc box bottom. It never shrinks below its content,
+   so when the stack overflows the column just scrolls as before. */
+#slot-left > div.grow-fill { flex:1 0 auto; display:flex; flex-direction:column; min-height:0; }
+#slot-left > div.grow-fill > .box { flex:1 0 auto; box-sizing:border-box; }
 .proc-box { display:flex; flex-direction:column; max-height:100%; margin:0; box-sizing:border-box; }
 .proc-scroll { flex:1 1 auto; min-height:0; overflow-y:auto; }
 /* Narrow screens: single column, let the page scroll normally (mobile). */
