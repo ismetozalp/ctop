@@ -99,10 +99,19 @@ const r0 = await f.evaluate(() => {
       const last = boxes[boxes.length - 1];
       if (!memBox || !procBox || !slotLeft || !last) return null;
       const r = (el) => el.getBoundingClientRect();
+      const slotProc = document.querySelector("#slot-proc");
+      const memTitle = memBox.querySelector(".box-title");
+      const procTitle = procBox.querySelector(".box-title");
+      // >0 => the title (position:top:-9px) is clipped above its slot's top edge.
+      const titleClip = Math.max(
+        memTitle ? Math.round(r(slotLeft).top - r(memTitle).top) : 0,
+        procTitle ? Math.round(r(slotProc).top - r(procTitle).top) : 0,
+      );
       return {
         topGap: Math.round(r(memBox).top - r(procBox).top),
         bottomGap: Math.round(r(procBox).bottom - r(last).bottom),
         scrolls: slotLeft.scrollHeight > slotLeft.clientHeight + 1,
+        titleClip,
       };
     })(),
     // Each visible box must actually draw all four borders: a real style
@@ -129,6 +138,9 @@ check("every box has all four borders", r0.borderlessBoxes.length === 0,
 check("middle columns align at the top (left stack starts with proc box)",
   !!r0.align && Math.abs(r0.align.topGap) <= 2,
   r0.align ? `topGap=${r0.align.topGap}px` : "no align data");
+check("mem/proc box titles are not clipped by the slot top",
+  !!r0.align && r0.align.titleClip <= 1,
+  r0.align ? `titleClip=${r0.align.titleClip}px` : "no align data");
 // Bottom-flush only holds when the stack fits; a short window legitimately scrolls.
 check("left stack bottom is flush with proc when it fits",
   !!r0.align && (r0.align.scrolls || Math.abs(r0.align.bottomGap) <= 2),
