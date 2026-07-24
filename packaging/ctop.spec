@@ -1,5 +1,5 @@
 Name:           cockpit-ctop
-Version:        1.1.2
+Version:        1.1.3
 Release:        1%{?dist}
 Summary:        btop-style system monitor for Cockpit
 License:        Apache-2.0
@@ -23,6 +23,10 @@ cp -r %{_sourcedir}/ctop/manifest.json %{_sourcedir}/ctop/index.html \
 %{_datadir}/cockpit/ctop
 
 %changelog
+* Fri Jul 24 2026 ismetozalp <ismetozalp@users.noreply.github.com> - 1.1.3-1
+- Fix the disk-I/O device label wrapping vertically (one character per line) in a narrow mem box
+- Show the containers box (empty) whenever podman or docker is installed, even with no containers running
+
 * Thu Jul 23 2026 ismetozalp <ismetozalp@users.noreply.github.com> - 1.1.2-1
 - Fix the battery box missing its left/right/bottom borders (it never set a box color)
 

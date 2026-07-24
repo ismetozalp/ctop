@@ -74,14 +74,26 @@ export class ContainersBox {
       const lists = await Promise.all(ENGINES.map((e) => this._pollEngine(e)));
       const rows = mergeRows(lists);
 
-      if (rows.length === 0) {
+      // Show the box whenever an engine binary is installed (state is only
+      // "missing" once a spawn returned not-found). Hide it only when neither
+      // podman nor docker is present, so an idle host still gets an empty box.
+      const anyInstalled = ENGINES.some((e) => this._engineState[e.id] !== "missing");
+      if (!anyInstalled) {
         this.root.style.display = "none";
         return;
       }
+
+      this.root.style.display = "";
+
+      if (rows.length === 0) {
+        this.engineTh.style.display = "none";
+        this.tbody.innerHTML = `<tr class="containers-empty"><td colspan="5">No containers running</td></tr>`;
+        return;
+      }
+
       const engines = new Set(rows.map((r) => r.engine));
       const showEngine = engines.size > 1;
 
-      this.root.style.display = "";
       this.engineTh.style.display = showEngine ? "" : "none";
       this.tbody.innerHTML = "";
       for (const row of rows) {

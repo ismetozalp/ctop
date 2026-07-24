@@ -19,7 +19,7 @@ html, body { margin:0; height:100%; background:var(--th-bg, var(--bg)); color:va
 .mem-row { display:flex; align-items:center; gap:8px; margin:2px 0; }
 .mem-label { width:80px; color:#606060; } .mem-meter { flex:0 0 160px; height:12px; } .mem-val { color:#ccc; }
 .mem-disk { display:flex; align-items:center; gap:8px; margin:2px 0; }
-.disk-label { width:60px; color:#606060; }
+.disk-label { flex:0 0 60px; color:#606060; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .disk-io { display:flex; align-items:center; gap:4px; flex:1; }
 .io-tag { color:#606060; } .disk-r, .disk-w { flex:1; height:16px; }
 .mem-mount { display:flex; align-items:center; gap:8px; margin:2px 0; }
@@ -283,6 +283,12 @@ html, body { overflow-x: hidden; }
   color: var(--th-dim, #808080);
   font-size: 0.9em;
 }
+.containers-box .containers-table tr.containers-empty td {
+  color: var(--th-dim, #808080);
+  font-style: italic;
+  text-align: center;
+}
+.containers-box .containers-table tr.containers-empty:hover td { background: transparent; }
 /* sensorsBox */
 /* src/boxes/sensorsBox.extra.css */
 .sensors-box { --box:#8d5c58; }

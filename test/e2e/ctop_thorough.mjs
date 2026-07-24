@@ -31,6 +31,9 @@ const BOTH_ENGINES = podmanIds.size > 0 && dockerIds.size > 0
   && [...dockerIds].some((id) => !podmanIds.has(id)) && [...podmanIds].some((id) => !dockerIds.has(id));
 let HOST_LOOPS = 0;
 try { HOST_LOOPS = readdirSync("/sys/block").filter((n) => /^loop\d+$/.test(n)).length; } catch { /* none */ }
+// A container engine is "installed" if its binary runs at all (any `version`
+// exit) — the box must appear (possibly empty) whenever one is present.
+const ENGINE_INSTALLED = ["podman", "docker"].some((c) => run(c, ["--version"]) !== "");
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const OUT = join(HERE, "out"); mkdirSync(OUT, { recursive: true });
@@ -76,7 +79,9 @@ const r0 = await f.evaluate(() => {
     diskLabels: q(".mem-disk .disk-label").map((e) => e.textContent.trim()),
     gpuName: (document.querySelector(".gpu-name") || {}).textContent || "",
     sensors: q(".sensors-row").length,
-    containers: q(".containers-box tbody tr").length,
+    containers: q(".containers-box td.cname").length,
+    containersBoxVisible: (() => { const el = document.querySelector(".containers-box"); return !!el && getComputedStyle(el.closest("[id^=slot-]") || el).display !== "none" && getComputedStyle(el).display !== "none"; })(),
+    containersEmptyRow: !!document.querySelector(".containers-box tr.containers-empty"),
     containerNames: q(".containers-box td.cname").map((e) => e.textContent.trim()),
     containerEngines: q(".containers-box td.cengine").map((e) => e.textContent.trim()),
     engineColShown: (() => { const th = document.querySelector(".containers-box .cengine-th"); return !!th && getComputedStyle(th).display !== "none"; })(),
@@ -118,8 +123,11 @@ if (ALL_NAMES.length) {
     `rows=${r0.containers} unique=${ALL_NAMES.length} shown=[${r0.containerNames}]`);
   check("engine column only when both engines run", r0.engineColShown === BOTH_ENGINES,
     `shown=${r0.engineColShown} bothEngines=${BOTH_ENGINES} engines=[${r0.containerEngines}]`);
+} else if (ENGINE_INSTALLED) {
+  check("containers box shown empty when an engine is installed", r0.containersBoxVisible && r0.containersEmptyRow,
+    `visible=${r0.containersBoxVisible} emptyRow=${r0.containersEmptyRow} rows=${r0.containers}`);
 } else {
-  check("containers box hidden (no containers running)", r0.containers === 0, "rows=" + r0.containers);
+  check("containers box hidden (no engine installed)", !r0.containersBoxVisible, "visible=" + r0.containersBoxVisible);
 }
 if (PCP_ACTIVE) check("history connected (no fallback)", r0.history === "", r0.history || "(empty=connected)");
 else check("history shows unavailable fallback (pmlogger inactive)", r0.history !== "", r0.history || "(empty)");
@@ -287,8 +295,17 @@ await sleep(500);
 // ---------- resize: no horizontal overflow at narrow width ----------
 await p.setViewportSize({ width: 820, height: 800 });
 await sleep(1500);
-const narrow = await f.evaluate(() => ({ overflowX: document.documentElement.scrollWidth - window.innerWidth }));
+const narrow = await f.evaluate(() => {
+  // The disk-I/O label must stay on one line even when the mem box is narrow
+  // (regression: it used to break "nvme0n1" one character per line).
+  const labels = Array.from(document.querySelectorAll(".mem-disk .disk-label"));
+  const line = parseFloat(getComputedStyle(document.body).lineHeight) || 18;
+  const wrapped = labels.filter((el) => el.clientHeight > line * 1.6).map((el) => el.textContent.trim());
+  return { overflowX: document.documentElement.scrollWidth - window.innerWidth, wrapped, diskCount: labels.length };
+});
 check("no h-overflow when narrow", narrow.overflowX <= 2, "overflowX=" + narrow.overflowX);
+check("disk labels stay on one line when narrow", narrow.wrapped.length === 0,
+  narrow.wrapped.length ? "wrapped: " + narrow.wrapped.join(",") : `ok (${narrow.diskCount} disks)`);
 await p.screenshot({ path: join(OUT, "t_narrow.png"), fullPage: true });
 await p.setViewportSize({ width: 1600, height: 1000 });
 
