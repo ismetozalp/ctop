@@ -9,6 +9,8 @@ A **[btop](https://github.com/aristocratos/btop)-style system monitor as a nativ
 - **[Explorer](https://github.com/ismetozalp/explorer)** — a full file manager for the Cockpit web console: browse/edit files, integrated terminal, git, and more. (Cockpit Top can deep-link a process's cwd straight into it.)
 - **[IF TV](https://github.com/ismetozalp/iftv)** — turns the Cockpit web console into a full IPTV client: live TV, movies, series, an EPG guide, and host-side transcoding.
 - **[Manifest](https://github.com/ismetozalp/manifest)** — a download manager for the Cockpit web console: torrents, magnets, and HTTP/FTP/Metalink files via a per-user `aria2c` daemon.
+- **[Pilot](https://github.com/ismetozalp/pilot)** — provisions and manages a self-hosted [RustDesk](https://rustdesk.com/) remote-desktop server (hbbs/hbbr + the rustdesk-api control plane) from the Cockpit web console: device inventory, address books, users, audit logs, and TLS.
+- **[Hangar](https://github.com/ismetozalp/hangar)** — backups for the Cockpit web console: `restic`/`rclone` for your files, ReaR for whole-machine bare-metal recovery, and a drill that boots the rescue image in a throwaway VM to prove recovery actually works.
 
 ## Features
 
